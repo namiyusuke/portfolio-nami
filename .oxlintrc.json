@@ -1,0 +1,5 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "extends": ["./node_modules/@yu_nami/oxlint-config/.oxlintrc.json"],
+  "ignorePatterns": ["dist", "configs", ".astro"]
+}

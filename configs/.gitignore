@@ -1,0 +1,9 @@
+node_modules/
+dist/
+pnpm-lock.yaml
+
+# macOS
+.DS_Store
+
+# editor
+.idea/

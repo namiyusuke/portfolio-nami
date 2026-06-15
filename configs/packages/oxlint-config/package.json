@@ -1,0 +1,33 @@
+{
+  "name": "@yu_nami/oxlint-config",
+  "version": "0.0.3",
+  "description": "Oxlint shared config for @yu_nami projects",
+  "main": ".oxlintrc.json",
+  "exports": {
+    ".": "./.oxlintrc.json"
+  },
+  "files": [
+    ".oxlintrc.json",
+    "README.md"
+  ],
+  "license": "MIT",
+  "author": "yu_nami <yu.namikawa18@gmail.com>",
+  "keywords": [
+    "oxlint",
+    "oxlint-config"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nami/configs.git",
+    "directory": "packages/oxlint-config"
+  },
+  "bugs": "https://github.com/nami/configs/issues",
+  "homepage": "https://github.com/nami/configs",
+  "publishConfig": {
+    "provenance": false,
+    "access": "public"
+  },
+  "peerDependencies": {
+    "oxlint": ">=1.0"
+  }
+}

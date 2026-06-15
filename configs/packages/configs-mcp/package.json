@@ -1,0 +1,52 @@
+{
+  "name": "@yu_nami/configs-mcp",
+  "version": "0.2.2",
+  "description": "MCP server for @yu_nami/configs — linting rules guide for Oxlint, Oxfmt, Stylelint, Markuplint",
+  "license": "MIT",
+  "author": "yu_nami <yu.namikawa18@gmail.com>",
+  "keywords": [
+    "oxlint",
+    "oxfmt",
+    "stylelint",
+    "markuplint",
+    "MCP",
+    "linter"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nami/configs.git",
+    "directory": "packages/configs-mcp"
+  },
+  "bugs": "https://github.com/nami/configs/issues",
+  "homepage": "https://github.com/nami/configs",
+  "bin": {
+    "configs-mcp": "./dist/index.mjs"
+  },
+  "scripts": {
+    "prebuild": "node -e \"require('fs').rmSync('./dist', {recursive:true,force:true})\"",
+    "build": "tsup-node",
+    "dev": "tsup-node --watch",
+    "prepublishOnly": "pnpm run build"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "provenance": false,
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "^22.12.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.3.6"
+  }
+}

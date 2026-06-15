@@ -1,0 +1,17 @@
+{
+  "name": "@yu_nami/configs",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "publish:main": "pnpm --filter=./packages/* publish",
+    "publish:beta": "pnpm --filter=./packages/* publish --tag beta"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nami/configs"
+  },
+  "author": "yu_nami <yu.namikawa18@gmail.com>",
+  "license": "MIT",
+  "description": "",
+  "packageManager": "pnpm@10.5.2+sha512.da9dc28cd3ff40d0592188235ab25d3202add8a207afbedc682220e4a0029ffbff4562102b9e6e46b4e3f9e8bd53e6d05de48544b0c57d4b0179e22c76d1199b"
+}

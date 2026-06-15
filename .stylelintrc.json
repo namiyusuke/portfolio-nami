@@ -1,0 +1,4 @@
+{
+  "extends": ["@yu_nami/stylelint-config"],
+  "ignoreFiles": ["dist/**", "configs/**", ".astro/**"]
+}

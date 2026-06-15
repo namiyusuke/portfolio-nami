@@ -1,0 +1,45 @@
+{
+  "name": "@yu_nami/markuplint-config",
+  "version": "0.0.6",
+  "description": "Markuplint shared config for @yu_nami projects",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./astro": "./astro.js",
+    "./wp": "./wp.js"
+  },
+  "files": [
+    "index.js",
+    "astro.js",
+    "wp.js"
+  ],
+  "license": "MIT",
+  "author": "yu_nami <yu.namikawa18@gmail.com>",
+  "keywords": [
+    "markuplint",
+    "markuplint-config"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nami/configs.git",
+    "directory": "packages/markuplint-config"
+  },
+  "bugs": "https://github.com/nami/configs/issues",
+  "homepage": "https://github.com/nami/configs",
+  "publishConfig": {
+    "provenance": false,
+    "access": "public"
+  },
+  "peerDependencies": {
+    "markuplint": ">=4"
+  },
+  "peerDependenciesMeta": {
+    "@markuplint/astro-parser": {
+      "optional": true
+    },
+    "@markuplint/php-parser": {
+      "optional": true
+    }
+  }
+}

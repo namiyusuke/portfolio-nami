@@ -1,0 +1,16 @@
+{
+  "extends": ["@yu_nami/markuplint-config/astro"],
+  "overrides": {
+    "./src/components/**/*.astro": {
+      "rules": {
+        "required-h1": false,
+        "heading-levels": false
+      }
+    },
+    "./src/layouts/**/*.astro": {
+      "rules": {
+        "required-h1": false
+      }
+    }
+  }
+}
