@@ -1,0 +1,10 @@
+/*
+ * カスタムメディアクエリの定義
+ * astro.config.mjs の Vite プラグインによって、全ての CSS（global.css や
+ * 各 .astro のスコープ付き <style>）の先頭に注入されます。
+ * これにより、どのファイルからでも `@media (--md)` のように参照できます。
+ */
+@custom-media --sm (width >= 480px);
+@custom-media --md (width >= 768px);
+@custom-media --lg (width >= 1024px);
+@custom-media --xl (width >= 1280px);

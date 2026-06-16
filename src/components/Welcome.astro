@@ -1,0 +1,65 @@
+---
+import { Picture } from "astro:assets";
+
+// Config
+import { SITE } from "../config";
+
+// Image
+import cover from "@assets/images/cover.jpg";
+---
+
+<div class="hero">
+  <p>{SITE.name}</p>
+  <figure class="cover">
+    <Picture src={cover} formats={["avif", "webp"]} widths={[300, 768, 1920, 4000]} alt="" />
+  </figure>
+</div>
+
+<style is:global>
+  * {
+    padding: 0;
+    margin: 0;
+  }
+
+  .hero {
+    display: block grid;
+    grid-template-columns: 1fr;
+
+
+    > *,
+    &::after {
+      grid-area: 1 / 1;
+    }
+
+    p {
+      z-index: 1;
+      align-self: center;
+      justify-self: center;
+      /* 480px(--sm)→1280px(--xl) でコンテナ幅に応じて 40px→80px に流体スケール */
+      font-size: clamp(40px, 16px + 5cqi, 80px);
+      font-weight: 900;
+      color: transparent;
+      background-color: #fff;
+      background-image: linear-gradient(125deg, #387fd1, #9d2fd0);
+      background-clip: text;
+
+      @media (--md) {
+        background-image: linear-gradient(125deg, #a1d138, #2f82d0);
+      }
+    }
+  }
+
+  picture {
+    display: inline;
+  }
+
+  .cover {
+    block-size: 70vb;
+    img {
+      inline-size: 100%;
+      block-size: 100%;
+      object-fit: cover;
+      object-position: 100% 100%;
+    }
+  }
+</style>

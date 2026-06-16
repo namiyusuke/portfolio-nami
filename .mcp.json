@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "configs": {
+      "command": "node",
+      "args": ["./configs/packages/configs-mcp/dist/index.mjs"]
+    }
+  }
+}

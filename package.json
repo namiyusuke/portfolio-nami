@@ -24,13 +24,21 @@
   },
   "pnpm": {
     "supportedArchitectures": {
-      "os": ["darwin", "linux"],
-      "cpu": ["arm64", "x64"]
+      "os": [
+        "darwin",
+        "linux"
+      ],
+      "cpu": [
+        "arm64",
+        "x64"
+      ]
     }
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
+    "@csstools/postcss-global-data": "^4.0.0",
     "@markuplint/astro-parser": "^4.18.3",
+    "@types/node": "^25.9.3",
     "@yu_nami/markuplint-config": "^0.0.6",
     "@yu_nami/oxfmt-config": "^0.0.2",
     "@yu_nami/oxlint-config": "^0.0.2",
@@ -38,6 +46,8 @@
     "markuplint": "^4.18.3",
     "oxfmt": "^0.55.0",
     "oxlint": "^1.70.0",
+    "postcss-custom-media": "^12.0.1",
+    "sharp": "^0.35.1",
     "stylelint": "^17.13.0",
     "stylelint-config-html": "^1.1.0",
     "stylelint-config-recess-order": "^7.7.0",

@@ -1,0 +1,31 @@
+---
+import { SITE } from "../config";
+import GlobalNavLink from "./GlobalNavLink.astro";
+
+const { pathname } = Astro.url;
+
+const Element = pathname === "/" ? "h1" : "p";
+
+const navLists = [
+  {
+    name: "Sample",
+    url: `${SITE.base}/sample/`,
+  },
+];
+---
+
+<header class="header">
+  <h1 class="header__text">
+    株式会社クーチェデザイン
+  </h1>
+</header>
+
+<style>
+  .header__inner {
+    padding-block: var(--space-sm);
+    padding-inline: var(--offset-md);
+  }
+  .header__text{
+    font-family: var(--ff-mincho);
+  }
+</style>

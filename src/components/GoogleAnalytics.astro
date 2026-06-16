@@ -1,0 +1,16 @@
+---
+import { SITE } from "@src/config";
+
+const trackingId = SITE.trackingId;
+---
+
+<script type="text/partytown" async src={`https://www.googletagmanager.com/gtag/js?id=${trackingId}`} is:inline></script>
+<script type="text/partytown" is:inline define:vars={{ trackingId }}>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() {
+    dataLayer.push(arguments);
+  }
+  gtag("js", new Date());
+
+  gtag("config", trackingId);
+</script>

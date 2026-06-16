@@ -1,0 +1,57 @@
+---
+import { ClientRouter } from "astro:transitions";
+
+// Config
+import { SITE, SNS } from "../config";
+
+// Style
+import "@styles/global.css";
+
+// Component
+import GlobalFooter from "@components/GlobalFooter.astro";
+import GlobalHeader from "@components/GlobalHeader.astro";
+import GoogleAnalytics from "@components/GoogleAnalytics.astro";
+
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+const isProd = import.meta.env.PROD;
+---
+
+<!doctype html>
+<html lang="ja" data-script-disabled>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={`${SITE.url}${SITE.base}/ogp.png`} />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta name="twitter:card" content="summary_large_image" />
+    {SNS.x && <meta name="twitter:site" content={SNS.x} />}
+    {SITE.clientRouter && <ClientRouter />}
+    <title>{title}</title>
+    <link rel="canonical" href={Astro.url} />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300;400;500;700;900&family=Zen+Old+Mincho:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <link rel="icon" href={`${SITE.base}/favicon.ico`} sizes="32x32" />
+    <link rel="icon" href={`${SITE.base}/favicon.svg`} type="image/svg+xml" />
+    {SITE.trackingId && isProd && <GoogleAnalytics />}
+  </head>
+  <body>
+    <GlobalHeader />
+    <slot />
+    <GlobalFooter />
+  </body>
+</html>
+
+<style>
+
+</style>
