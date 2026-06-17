@@ -1,0 +1,55 @@
+---
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import '../styles/_swup-transition.scss';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {description && <meta name="description" content={description} />}
+    <!-- title/meta は @swup/head-plugin が遷移時に差し替える -->
+    <title>{title}</title>
+  </head>
+  <body>
+    <!-- (1) body 直下: ローディング画面 + 遷移カーテン -->
+    <div class="c-loading">
+      <div class="c-loading__inner">
+        <div class="c-loading__counter">000</div>
+        <div class="c-loading__bar"><span class="c-loading__bar-fill"></span></div>
+      </div>
+    </div>
+    <div class="c-transition" aria-hidden="true"></div>
+
+    <!-- (2) header / nav は #swup の外 -->
+    <Header />
+
+    <!-- (3) ページごとに中身が変わる範囲を #swup で囲う -->
+    <div id="swup" class="transition-fade">
+      <slot />
+    </div>
+
+    <!-- (4) footer も #swup の外 -->
+    <Footer />
+
+    <!-- (5) Swup + GSAP バンドル。Astro が初回に1度だけ実行する -->
+    <script src="../js/main.js"></script>
+  </body>
+</html>
+
+<style is:global>
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+  }
+</style>

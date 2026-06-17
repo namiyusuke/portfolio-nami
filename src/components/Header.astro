@@ -1,0 +1,37 @@
+---
+// ヘッダー・ナビは #swup の外に置く(遷移時に保持される)
+---
+
+<header class="site-header">
+  <a class="site-header__logo" href="/">kuuche design</a>
+  <nav class="site-header__nav">
+    <a href="/">Home</a>
+    <a href="/about/">About</a>
+  </nav>
+</header>
+
+<style>
+  .site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem clamp(1rem, 4vw, 3rem);
+  }
+
+  .site-header__logo {
+    font-weight: 600;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .site-header__nav {
+    display: flex;
+    gap: 1.25rem;
+  }
+
+  .site-header__nav a {
+    text-decoration: none;
+    color: inherit;
+  }
+</style>
