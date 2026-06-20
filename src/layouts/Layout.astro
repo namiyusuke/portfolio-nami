@@ -1,11 +1,10 @@
 ---
-import { ClientRouter } from "astro:transitions";
-
 // Config
 import { SITE, SNS } from "../config";
 
 // Style
 import "@styles/global.css";
+import "@styles/_swup-transition.scss";
 
 // Component
 import GlobalFooter from "@components/GlobalFooter.astro";
@@ -35,7 +34,6 @@ const isProd = import.meta.env.PROD;
     <meta property="og:site_name" content={SITE.name} />
     <meta name="twitter:card" content="summary_large_image" />
     {SNS.x && <meta name="twitter:site" content={SNS.x} />}
-    {SITE.clientRouter && <ClientRouter />}
     <title>{title}</title>
     <link rel="canonical" href={Astro.url} />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -46,12 +44,29 @@ const isProd = import.meta.env.PROD;
     {SITE.trackingId && isProd && <GoogleAnalytics />}
   </head>
   <body>
+    <!-- (1) body 直下: ローディング画面 + 遷移カーテン -->
+    <div class="c-loading">
+      <div class="c-loading__inner">
+        <div class="c-loading__counter">000</div>
+        <div class="c-loading__bar"><span class="c-loading__bar-fill"></span></div>
+      </div>
+    </div>
+    <div class="c-transition" aria-hidden="true"></div>
+
+    <!-- (2) header / nav は #swup の外(遷移時に保持される) -->
     <GlobalHeader />
-    <slot />
+
+    <!-- (3) ページごとに中身が変わる範囲を #swup で囲う -->
+    <div id="swup" class="transition-fade">
+      <slot />
+    </div>
+
+    <!-- (4) footer も #swup の外 -->
     <GlobalFooter />
+
+    <!-- (5) Swup + GSAP バンドル。Astro が初回に1度だけ実行する -->
+    <script src="../js/main.js"></script>
   </body>
 </html>
-
-<style>
-
-</style>
+</content>
+</invoke>

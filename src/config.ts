@@ -7,7 +7,7 @@ export const SITE = {
   url: "https://example.com",
   base: "",
   trackingId: null, // G-XXXXXXX
-  clientRouter: true,
+  clientRouter: false, // ページ遷移は swup(src/js)で制御するため Astro 標準の ClientRouter は不使用
 };
 
 // ================================
