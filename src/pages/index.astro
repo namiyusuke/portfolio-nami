@@ -4,10 +4,115 @@ import { SITE } from "@src/config";
 
 // Layout
 import Layout from "@layouts/Layout.astro";
-import Welcome from "../components/Welcome.astro";
+import { getProject } from "../libs/microcms";
+import type { Project } from "../libs/microcms";
+const response = await getProject({
+  fields: ["id", "title", "thumbnail"],
+  limit: 10,
+});
 ---
 
 <Layout title={`ページタイトル | ${SITE.name}`} description="ページの紹介文">
-  <Welcome />
+  <div class="hero">
+    <video
+      class="hero__video"
+      src="/dummy.mp4"
+      autoplay
+      muted
+      loop
+      playsinline
+    ></video>
+  </div>
+  <div class="marquee">
+    <ul class="marquee__track">
+      {
+        [...response.contents, ...response.contents].map((content: Project) => (
+          <li class="marquee__item">
+            <a href={content.id}>
+              {content.thumbnail && (
+                <img
+                  src={content.thumbnail.url}
+                  width={content.thumbnail.width}
+                  height={content.thumbnail.height}
+                  alt={content.title}
+                />
+              )}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
 </Layout>
-</content>
+
+<style>
+  .hero {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .hero__video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .marquee {
+    overflow: hidden;
+    width: 100%;
+    /* translateY のずれ分を上下に確保して見切れを防ぐ */
+    padding-block: 60px;
+  }
+
+  .marquee__track {
+    display: flex;
+    align-items: center;
+    width: max-content;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    /* 2セット分を流すので -50% で1周 */
+    animation: marquee-scroll 40s linear infinite;
+  }
+
+  /* ホバー中はスクロールを一時停止 */
+  .marquee:hover .marquee__track {
+    animation-play-state: paused;
+  }
+
+  .marquee__item {
+    flex: 0 0 auto;
+    position: relative;
+    z-index: 0;
+  }
+  /* ホバー中の画像を最前面に持ち上げて、隣に潜らないようにする */
+  .marquee__item:hover {
+    z-index: 10;
+  }
+  /* 上下にランダムっぽくずらす */
+  .marquee__item:nth-child(5n + 1) { transform: translateY(-40px); }
+  .marquee__item:nth-child(5n + 2) { transform: translateY(20px); }
+  .marquee__item:nth-child(5n + 3) { transform: translateY(-10px); }
+  .marquee__item:nth-child(5n + 4) { transform: translateY(48px); }
+  .marquee__item:nth-child(5n + 5) { transform: translateY(8px); }
+
+  .marquee__item img {
+    display: block;
+    height: 120px;
+    width: auto;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .marquee__item:hover img {
+    transform: scale(1.2);
+    display: block;
+  }
+
+  @keyframes marquee-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+</style>

@@ -1,7 +1,7 @@
 ---
 import { SITE } from "../config";
 import GlobalNavLink from "./GlobalNavLink.astro";
-
+import logo from "@assets/images/logo.svg";
 const { pathname } = Astro.url;
 
 const Element = pathname === "/" ? "h1" : "p";
@@ -15,8 +15,13 @@ const navLists = [
 ---
 
 <header class="header">
-  <h1 class="header__text">
-    株式会社クーチェデザイン
+  <h1 class="logo__text">
+    <span
+      class="logo__shape"
+      role="img"
+      aria-label={SITE.name}
+      style={`--logo:url(${logo.src}); width:${logo.width}px; height:${logo.height}px;`}
+    ></span>
   </h1>
 </header>
 
@@ -27,5 +32,22 @@ const navLists = [
   }
   .header__text{
     font-family: var(--ff-mincho);
+  }
+  .logo__text{
+    position: fixed;
+    /* 背景は緑 */
+    background-color: #46FE6E;
+    margin: 0;
+    padding-block: 20px;
+    padding-left: 22px;
+    padding-right: 38px;
+  }
+  /* ロゴSVGをマスクにして白で塗り、緑背景をその形のまま反転する */
+  .logo__shape{
+    display: block;
+    background-color: #fff;
+    -webkit-mask: var(--logo) no-repeat center / contain;
+    mask: var(--logo) no-repeat center / contain;
+    mix-blend-mode: difference;
   }
 </style>
