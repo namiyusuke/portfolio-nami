@@ -1,3 +1,4 @@
+import { initLenis, resetScroll } from './libs/lenis.js';
 import {
   initSwup,
   registerPageInit,
@@ -5,7 +6,17 @@ import {
 } from './libs/swup.js';
 import { enter, initial, leave } from './libs/transition.js';
 
-registerPageTransition({ initial, leave, enter });
+initLenis();
+
+registerPageTransition({
+  initial,
+  leave,
+  // ページ入場前にスクロール位置を先頭へ戻す
+  enter: async (visit) => {
+    resetScroll();
+    await enter(visit);
+  },
+});
 initSwup();
 
 registerPageInit(() => {

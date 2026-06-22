@@ -6,6 +6,13 @@ import { SITE } from "@src/config";
 import Layout from "@layouts/Layout.astro";
 import { getProject } from "../libs/microcms";
 import type { Project } from "../libs/microcms";
+
+// Assets
+import coverBg from "@src/assets/images/cover-bg.jpg";
+import mvText from "@src/assets/images/mv-text.svg";
+import logoPrimary from "@src/assets/images/logo-primary.svg";
+import heroIntroText from "@src/assets/images/hero-intro-text.svg";
+import headingProject from "@src/assets/images/heading-project.svg";
 const response = await getProject({
   fields: ["id", "title", "thumbnail"],
   limit: 10,
@@ -13,43 +20,159 @@ const response = await getProject({
 ---
 
 <Layout title={`ページタイトル | ${SITE.name}`} description="ページの紹介文">
-  <div class="hero">
-    <video
-      class="hero__video"
-      src="/dummy.mp4"
-      autoplay
-      muted
-      loop
-      playsinline
-    ></video>
+  <div class="cover-bg" style={`background-image: url(${coverBg.src});`}></div>
+  <div class="hero-wrapper">
+    <div class="hero-ttl">
+      <img class="hero-mvText" src={mvText.src} alt="">
+      <span class="hero-logoSentinel" aria-hidden="true"></span>
+      <img class="hero-logoPrimary" src={logoPrimary.src} alt="">
+    </div>
   </div>
-  <div class="marquee">
-    <ul class="marquee__track">
-      {
-        [...response.contents, ...response.contents].map((content: Project) => (
-          <li class="marquee__item">
-            <a href={content.id}>
-              {content.thumbnail && (
-                <img
-                  src={content.thumbnail.url}
-                  width={content.thumbnail.width}
-                  height={content.thumbnail.height}
-                  alt={content.title}
-                />
-              )}
-            </a>
-          </li>
-        ))
-      }
-    </ul>
+    <div class="hero">
+      <video
+        class="hero__video"
+        src="/dummy.mp4"
+        autoplay
+        muted
+        loop
+        playsinline
+      ></video>
+    </div>
+
+
+  <div class="js-section section-spacer">
+    <div class="hero__intro-wrapper">
+      <div class="hero__intro-text">
+        <img class="hero__intro-text-ja" src={heroIntroText.src} alt="">
+        <p class="hero__intro-text-en">
+          Connecting the past,<br>Creating the future.<br>
+          Finding the value rooted in a place,<br>bringing clarity to its purpose,<br>and shaping it into something that reaches the future.<br>
+          Kuuche Design Inc.<br>Works alongside people and businesses through the process of brand building.
+        </p>
+      </div>
+    </div>
+    <section class="project-section">
+      <h2 class="heading">
+      <img class="heading-ja" src={headingProject.src} alt="">
+      <span class="heading-en">project</span>
+      </h2>
+      <div class="marquee">
+        <ul class="marquee__track">
+          {
+            [...response.contents, ...response.contents].map((content: Project) => (
+              <li class="marquee__item">
+                <a href={content.id}>
+                  {content.thumbnail && (
+                    <img
+                      src={content.thumbnail.url}
+                      width={content.thumbnail.width}
+                      height={content.thumbnail.height}
+                      alt={content.title}
+                    />
+                  )}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </section>
   </div>
 </Layout>
 
 <style>
+  .project-section{
+    margin-top: 50vh;
+    z-index: 10;
+    position: relative;
+  }
+  .hero__intro-wrapper{
+    height: 100vh;
+    width: 100vw;
+    position: relative;
+  }
+  .hero__intro-text{
+    position: absolute;
+    inset-inline: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    top: 100px;
+    z-index: 10;
+  }
+  .hero__intro-text-ja{
+    max-width: 353px;
+    margin-bottom: 120px;
+  }
+  .hero__intro-text-en{
+    color:#fff ;
+    text-align: center;
+    font-family:var(--ff-mincho) ;
+  }
+  .cover-bg {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    /* 背面に固定。スクロールで現れる背景 */
+    z-index: 0;
+  }
+.hero-wrapper{
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+.hero-ttl{
+  position: absolute;
+  inset-inline: 0;
+  margin-inline: auto;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  top: min(calc(354 / 1440 * 100vw),354px);
+}
+.hero-ttl img{
+  width: 100%;
+}
+.hero-mvText{
+  max-width: 128px;
+}
+.hero-logoPrimary{
+  max-width: 102px;
+}
+/* スクロールで上端 84px 地点に達したら固定 */
+.hero-logoPrimary.is-fixed{
+  position: fixed;
+  top: min(calc(84 / 1440 * 100vw), 84px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 102px;
+  z-index: 20;
+}
   .hero {
+    position: fixed;
+    inset: 0;
     width: 100vw;
     height: 100vh;
     overflow: hidden;
+    /* cover-bg の手前に重ねる */
+    z-index: 1;
+    will-change: opacity;
+    /* cover-bg へのクロスフェード */
+    transition: opacity 0.6s ease;
+  }
+.section-spacer{
+  padding-block: 300px;
+}
+  /* IntersectionObserver で付与。video をフェードアウトして cover-bg を見せる */
+  .hero.is-hidden {
+    opacity: 0;
+    pointer-events: none;
   }
 
   .hero__video {
@@ -59,7 +182,15 @@ const response = await getProject({
     object-fit: cover;
   }
 
+  /* hero が fixed なので、1画面分のスクロール領域を確保する */
+  .hero-spacer {
+    height: 100vh;
+  }
+
   .marquee {
+    position: relative;
+    /* cover-bg(0)・hero(1) より前面に表示 */
+    z-index: 2;
     overflow: hidden;
     width: 100%;
     /* translateY のずれ分を上下に確保して見切れを防ぐ */
@@ -116,3 +247,53 @@ const response = await getProject({
     to { transform: translateX(-50%); }
   }
 </style>
+
+<script>
+  // 次セクション(marquee)を IntersectionObserver で監視し、
+  // 画面に入ってきたら hero(video) をフェードアウトして背面の cover-bg を見せる
+  const hero = document.querySelector<HTMLElement>(".hero");
+  const trigger = document.querySelector<HTMLElement>(".js-section");
+
+  if (hero && trigger) {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // marquee が画面に入ったら切り替え / 戻ったら video を再表示
+        hero.classList.toggle("is-hidden", entry.isIntersecting);
+      },
+      // 画面下端から 120px 入ってきたら発火(=少しスクロールしてから切り替え)
+      { rootMargin: "0px 0px -120px 0px", threshold: 0 },
+    );
+
+    observer.observe(trigger);
+  }
+
+  // hero-logoPrimary を上端 84px 地点でスクロール固定する(IntersectionObserver)
+  const logo = document.querySelector<HTMLElement>(".hero-logoPrimary");
+  const sentinel = document.querySelector<HTMLElement>(".hero-logoSentinel");
+
+  if (logo && sentinel) {
+    // 固定発火ライン(min(84/1440*100vw, 84px))を算出
+    const getOffset = (): number => Math.min((84 / 1440) * window.innerWidth, 84);
+
+    let observer: IntersectionObserver | null = null;
+
+    const setup = (): void => {
+      observer?.disconnect();
+      const offset = getOffset();
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          // sentinel が 84px ラインより上に抜けたら固定
+          const aboveLine = !entry.isIntersecting && entry.boundingClientRect.top < offset;
+          logo.classList.toggle("is-fixed", aboveLine);
+        },
+        // root の上端を offset 分だけ下げて、その位置を判定ラインにする
+        { rootMargin: `-${offset}px 0px 0px 0px`, threshold: 0 },
+      );
+      observer.observe(sentinel);
+    };
+
+    setup();
+    // 画面幅で offset(=rootMargin)が変わるため、リサイズ時に再構築
+    window.addEventListener("resize", setup);
+  }
+</script>
