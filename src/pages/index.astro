@@ -6,6 +6,7 @@ import { SITE } from "@src/config";
 import Layout from "@layouts/Layout.astro";
 import { getProject } from "../libs/microcms";
 import type { Project } from "../libs/microcms";
+import { getNotePosts } from "../libs/note";
 
 // Assets
 import coverBg from "@src/assets/images/cover-bg.jpg";
@@ -17,6 +18,9 @@ const response = await getProject({
   fields: ["id", "title", "thumbnail"],
   limit: 10,
 });
+
+// note の RSS から記事(タイトル・サムネイル・URL)を取得
+const notePosts = await getNotePosts(10);
 ---
 
 <Layout title={`ページタイトル | ${SITE.name}`} description="ページの紹介文">
@@ -40,7 +44,7 @@ const response = await getProject({
     </div>
 
 
-  <div class="js-section section-spacer">
+  <div class="js-section">
     <div class="hero__intro-wrapper">
       <div class="hero__intro-text">
         <img class="hero__intro-text-ja" src={heroIntroText.src} alt="">
@@ -51,8 +55,8 @@ const response = await getProject({
         </p>
       </div>
     </div>
-    <section class="project-section">
-      <h2 class="heading">
+    <section class="project-section js-fadeOut">
+      <h2 class="heading heading-project" data-direction="center">
       <img class="heading-ja" src={headingProject.src} alt="">
       <span class="heading-en">project</span>
       </h2>
@@ -77,13 +81,154 @@ const response = await getProject({
         </ul>
       </div>
     </section>
+    <section class="note">
+      <div class="magazine-wrapper">
+        <h2 class="heading heading-project">
+          <img class="heading-ja" src={headingProject.src} alt="">
+          <span class="heading-en">project</span>
+        </h2>
+        <p class="magazine-intro-text">
+          制作話や仕事への姿勢、価値観に<br>ついてまとめています
+        </p>
+        <p class="c-button">
+          <a href="#">
+            <span>記事一覧へ</span>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2.92773 10.7342L10.7347 2.92725" stroke="#46FE6E"/>
+            <path d="M4.87887 2.9281H10.7341V8.78333" stroke="#46FE6E"/>
+            </svg>
+          </a>
+        </p>
+      </div>
+      <div class="note-swiper-wrapper">
+        <div class="note-swiper-area">
+          <div class="swiper js-noteSwiper note-swiper">
+            <ul class="swiper-wrapper note-swiper__list">
+              {
+                notePosts.map((post) => (
+                  <li class="swiper-slide note-card">
+                    <a class="note-card__link" href={post.link} target="_blank" rel="noopener noreferrer">
+                      <p class="note-card__title">{post.title}</p>
+                      {post.thumbnail && (
+                        <div class="note-card__thumb">
+                          <img src={post.thumbnail} alt={post.title} loading="lazy" />
+                        </div>
+                      )}
+                    </a>
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+        </div>
+          <div class="note-swiper__nav">
+            <button class="note-swiper__btn note-swiper__prev" type="button" aria-label="前の記事へ">
+              <span class="note-swiper__btn-ja">
+                <svg width="16" height="23" viewBox="0 0 16 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <g clip-path="url(#clip0_376_241)">
+                  <path d="M13.5379 2.81627L14.4125 1.88466C14.4125 1.88466 15.39 2.53397 16.0073 3.02095C15.9559 3.17621 15.7942 3.24679 15.5443 3.24679H0.154341L0 2.81627H13.5379ZM1.6022 4.31956L2.78548 4.80653H6.65135V5.23705H2.69729V13.4028C2.69729 13.5157 2.27836 13.7486 1.78594 13.7486H1.6022V4.31956ZM6.6734 7.05793V7.50256H2.13872V7.05793H6.6734ZM6.6734 9.4293V9.87394H2.13872V9.4293H6.6734ZM5.26964 2.66101C5.09325 1.80703 4.20395 0.769552 3.41755 0.155535L3.60864 0.0426125C7.46716 1.08009 6.53376 3.42323 5.26964 2.66101ZM5.887 4.79948L6.46027 4.1784L7.92283 5.12413C7.80524 5.22999 7.51125 5.36409 7.15847 5.41349V12.4076C7.15847 13.1628 6.98209 13.6216 5.57832 13.7415C5.54892 13.4522 5.48277 13.2193 5.29169 13.064C5.09325 12.9228 4.75517 12.817 4.15985 12.7464V12.5135C4.15985 12.5135 5.42398 12.5982 5.71796 12.5982C5.98254 12.5982 6.04869 12.5064 6.04869 12.3088V4.79948H5.8723H5.887ZM12.7368 0.459015C12.6706 0.628399 12.4502 0.748379 12.0606 0.741321C11.4212 1.4612 10.3261 2.41399 9.37069 3.10564H9.02526C9.67937 2.2446 10.4658 0.953051 10.9141 0.00732422L12.7441 0.466072L12.7368 0.459015ZM11.2522 4.76419C11.2154 4.96886 11.0537 5.11001 10.6054 5.15942V11.1796C10.6054 11.2996 10.1497 11.4972 9.73082 11.4972H9.52503V4.5948L11.2448 4.75713L11.2522 4.76419ZM14.9711 4.40425C14.9343 4.61598 14.78 4.75007 14.361 4.79948V12.3512C14.361 13.1346 14.1626 13.6145 12.5531 13.7415C12.5016 13.4663 12.3987 13.2263 12.1709 13.0711C11.9063 12.9158 11.458 12.8099 10.6789 12.7323V12.4923C10.6789 12.4923 12.4722 12.6053 12.847 12.6053C13.1778 12.6053 13.266 12.5206 13.266 12.2947V4.23486L14.9784 4.40425H14.9711Z" fill="white"/>
+                  <path d="M11.3034 20.4319C9.89228 19.1898 8.57671 17.6018 7.29053 16.3738C6.96715 16.0844 6.70257 15.9927 6.46738 15.9927C6.2616 15.9927 6.07051 16.1197 5.80592 16.3879C5.22531 16.9878 4.05673 18.4134 3.41731 19.1263C3.02044 19.6062 2.7632 19.9238 2.32223 19.9238C1.85186 19.9238 1.21979 19.5427 0.867015 19.1898C0.690626 18.9922 0.573033 18.7028 0.492188 18.4134L0.749422 18.2158C1.13895 18.5264 1.51378 18.7451 1.82246 18.7451C2.04295 18.7451 2.31488 18.611 2.61621 18.357C3.36587 17.7218 4.73289 16.3526 5.35025 15.7386C5.68833 15.3998 6.03376 15.2163 6.45268 15.2163C6.87161 15.2163 7.31993 15.3363 7.84175 15.795C9.62035 17.3195 11.3034 19.6062 14.6034 21.2012C15.0296 21.42 15.2575 21.7446 15.2575 22.1046C15.2575 22.3869 15.0811 22.5845 14.7136 22.5845C14.0815 22.5845 12.6925 21.667 11.296 20.4249L11.3034 20.4319Z" fill="white"/>
+                  </g>
+                  <defs>
+                  <clipPath id="clip0_376_241">
+                  <rect width="16" height="22.5845" fill="white"/>
+                  </clipPath>
+                  </defs>
+                </svg>
+              </span>
+              <span class="note-swiper__btn-arrow" aria-hidden="true">←</span>
+            </button>
+            <button class="note-swiper__btn note-swiper__next" type="button" aria-label="次の記事へ">
+              <span class="note-swiper__btn-ja">
+                <svg width="16" height="23" viewBox="0 0 16 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <g clip-path="url(#clip0_376_235)">
+                  <path d="M5.96395 6.8177L6.07687 7.00826C4.96176 7.80578 3.3385 8.97735 1.18591 10.3465C1.17885 10.53 1.06593 10.7065 0.91066 10.7841L-0.00683594 9.54902C0.995352 9.17496 3.47259 8.0175 5.95689 6.82476L5.96395 6.8177ZM3.50788 3.93818C3.10559 3.07714 1.8705 2.04672 0.875372 1.47505L1.03064 1.32684C5.52637 2.08201 4.88412 4.60865 3.50788 3.93818ZM10.2621 3.19006C9.9727 8.73033 8.57528 11.9557 2.2375 13.7907L2.11046 13.5789C7.67896 11.4334 8.97757 8.32098 9.14695 3.19712H10.255L10.2621 3.19006ZM9.22459 0.479921C9.15401 0.66342 8.97757 0.797516 8.60351 0.783401C7.62956 3.35945 6.11216 5.42029 4.24894 6.71889L4.01603 6.56363C5.4558 5.05329 6.76852 2.63251 7.41783 0L9.21753 0.479921H9.22459ZM14.2214 3.11949V3.55H6.81792L6.99437 3.11949H14.2144H14.2214ZM15.5553 12.7814L15.513 12.9508C14.9625 13.0214 14.6025 13.2402 14.4543 13.7977C10.9961 11.7439 10.2127 8.00339 10.0009 3.65587L10.3115 3.59941C10.622 7.77049 11.6524 10.8759 15.5553 12.7814ZM13.6215 3.11949L14.3555 2.44901L15.6541 3.57824C15.52 3.69116 15.3365 3.71233 14.9978 3.72645C14.4402 4.65806 13.3886 5.87903 12.4358 6.6342L12.2312 6.50011C12.8522 5.55438 13.5509 4.06521 13.8332 3.11243H13.6356L13.6215 3.11949Z" fill="white"/>
+                  <path d="M10.9258 20.4744C9.5707 19.2323 8.30737 17.6443 7.07228 16.4162C6.76175 16.1269 6.50767 16.0351 6.28183 16.0351C6.08421 16.0351 5.90071 16.1622 5.64664 16.4304C5.08908 17.0303 3.96691 18.4559 3.3529 19.1687C2.97178 19.6487 2.72476 19.9662 2.3013 19.9662C1.84961 19.9662 1.24265 19.5851 0.903886 19.2323C0.734502 19.0346 0.62158 18.7453 0.543945 18.4559L0.790964 18.2583C1.16502 18.5688 1.53202 18.7876 1.82138 18.7876C2.03311 18.7876 2.29425 18.6535 2.58361 18.3994C3.30349 17.7643 4.61622 16.3951 5.20906 15.7811C5.54077 15.4423 5.86542 15.2588 6.26771 15.2588C6.67 15.2588 7.10051 15.3788 7.60161 15.8375C9.30956 17.362 10.9258 19.6487 14.0947 21.2437C14.504 21.4625 14.7228 21.7871 14.7228 22.1471C14.7228 22.4294 14.5534 22.627 14.2005 22.627C13.5936 22.627 12.2597 21.7095 10.9187 20.4673L10.9258 20.4744Z" fill="white"/>
+                  </g>
+                  <defs>
+                  <clipPath id="clip0_376_235">
+                  <rect width="15.6539" height="22.6269" fill="white"/>
+                  </clipPath>
+                  </defs>
+                </svg>
+              </span>
+              <span class="note-swiper__btn-arrow" aria-hidden="true">→</span>
+            </button>
+          </div>
+        </div>
+    </section>
+    <footer class="footer">
+      <div class="footer-logo">
+        <img class="footer-logoText" src={mvText.src} alt="">
+        <img class="footer-logo-img" src={logoPrimary.src} alt="">
+      </div>
+      <div class="footer-bottom">
+        <div class="">
+          <p class="footer-company">株式会社クーチェデザイン/ Kuuche Design Inc.</p>
+          <p>
+            <address class="">
+              〒792-0003 愛媛県新居浜市新田町1丁目8-56<br>
+              090-8360-8682
+            </address>
+          </p>
+        </div>
+        <div class="">
+          <nav>
+            <ul>
+              <li>
+                <a href="#">志 about</a>
+              </li>
+              <li>
+                <a href="#">実例 project</a>
+              </li>
+              <li>
+                <a href="#">問合 contact</a>
+              </li>
+            </ul>
+          </nav>
+           <div>
+
+           </div>
+        </div>
+      </div>
+    </footer>
   </div>
 </Layout>
 
 <style>
+.footer-logoText{
+  max-width: 128px;
+  margin-inline: auto;
+}
+.footer-logo-img{
+  max-width: 102px;
+  margin-inline: auto;
+}
+.c-button a{
+  display: inline-flex;
+  column-gap: 32px;
+  color: #46FE6E;
+  border-radius:30px ;
+  border: #46FE6E 1px solid;
+  padding-inline:24px;
+  padding-block:12px;
+  font-size: 14px;
+}
+  .magazine-intro-text{
+    color: #fff;
+    font-family: var(--ff-mincho);
+    padding-bottom:22px ;
+  }
   .project-section{
     margin-top: 50vh;
     z-index: 10;
+    position: relative;
+  }
+  .magazine-wrapper{
+    width: calc(1196 / 1440 * 100%);
+    margin-inline: auto;
+  }
+  .note-swiper-wrapper{
     position: relative;
   }
   .hero__intro-wrapper{
@@ -110,17 +255,18 @@ const response = await getProject({
     text-align: center;
     font-family:var(--ff-mincho) ;
   }
-  .cover-bg {
-    position: fixed;
-    inset: 0;
-    width: 100vw;
-    height: 100vh;
-    background-position: center;
-    background-size: cover;
-    background-repeat: no-repeat;
-    /* 背面に固定。スクロールで現れる背景 */
-    z-index: 0;
-  }
+.cover-bg {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  /* 背面に固定。スクロールで現れる背景 */
+  z-index: 0;
+}
+
 .hero-wrapper{
   position: relative;
   width: 100vw;
@@ -153,6 +299,25 @@ const response = await getProject({
   transform: translateX(-50%);
   width: 102px;
   z-index: 20;
+  transition: top 0.6s ease;
+}
+/* footer まで到達したら下方へアニメーション */
+.footer{
+  position: relative;
+}
+.hero-logoPrimary.is-fixed.is-bottom{
+  opacity: 0;
+  visibility: hidden;
+}
+.footer-logo{
+  bottom: 380px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
 }
   .hero {
     position: fixed;
@@ -166,9 +331,6 @@ const response = await getProject({
     /* cover-bg へのクロスフェード */
     transition: opacity 0.6s ease;
   }
-.section-spacer{
-  padding-block: 300px;
-}
   /* IntersectionObserver で付与。video をフェードアウトして cover-bg を見せる */
   .hero.is-hidden {
     opacity: 0;
@@ -241,10 +403,141 @@ const response = await getProject({
     transform: scale(1.2);
     display: block;
   }
-
+[data-direction="center"]{
+  text-align: center;
+}
+.heading-ja{
+  margin-bottom: 10px;
+}
+.heading-en{
+  font-size: 18px;
+  font-weight: 400;
+  color: #fff;
+  display: block;
+  line-height: 1;
+}
+.heading-project{
+  padding-bottom: 40px;
+}
   @keyframes marquee-scroll {
     from { transform: translateX(0); }
     to { transform: translateX(-50%); }
+  }
+
+  /* note セクション(Swiper スライダー) */
+  .note {
+    position: relative;
+    z-index: 10;
+    margin-top: 200px;
+    /* 画面外に流れるスライドで横スクロールが出ないように */
+    overflow: hidden;
+  }
+  .note .heading {
+    margin-bottom: 40px;
+  }
+  .note-swiper-area {
+    margin-left: 475px;
+    overflow-x: clip;
+    position: relative;
+  }
+  .note-swiper {
+    width: 100%;
+    /* 右側のスライドは画面外まで続いて見えるように */
+    overflow: visible;
+  }
+  .note-swiper__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .note-card {
+    /* slidesPerView:auto なので幅をスライド自身で決める */
+    flex: 0 0 auto;
+    width: auto;
+  }
+  .note-card__link {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    color: #fff;
+    text-decoration: none;
+    position: relative;
+  }
+  /* 縦書きタイトル(画像左) */
+  .note-card__title {
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    max-height: 230px;
+    margin: 0;
+    font-family: var(--ff-mincho);
+    font-size: 24px;
+    overflow: hidden;
+    position: absolute;
+    right: 30px;
+    top: -68px;
+  }
+  .note-card__thumb {
+    flex: 0 0 auto;
+    width: 345px;
+    overflow: hidden;
+    aspect-ratio: 345 / 194;
+  }
+  .note-card__thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+  }
+  .note-card__link:hover .note-card__thumb img {
+    transform: scale(1.08);
+  }
+
+  /* 前へ / 次へ ボタン */
+  .note-swiper__nav {
+    display: flex;
+    gap: 20px;
+    position: absolute;
+    bottom:0;
+    left: 384px;
+    z-index: 10;
+  }
+  .note-swiper__btn {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    padding: 0;
+    color: #fff;
+    cursor: pointer;
+    background: none;
+    border: none;
+    transition: opacity 0.3s ease;
+  }
+  .note-swiper__btn:hover {
+    opacity: 0.6;
+  }
+  /* Swiper が端で無効化したボタンは薄く表示 */
+  .note-swiper__btn.swiper-button-disabled {
+    cursor: default;
+    opacity: 0.25;
+  }
+  .note-swiper__btn-arrow {
+    font-size: 16px;
+  }
+.footer{
+  height: calc(1024 / 810 * 100vh);
+  }
+  .footer-bottom{
+    position: absolute;
+    inset-inline: 0;
+    width: calc(1235 / 1440 * 100%);
+    margin-inline: auto;
+    z-index: 10;
+    bottom: 66px;
+    color: #46FE6E;
+    display: flex;
+    justify-content: space-between;
   }
 </style>
 
@@ -295,5 +588,18 @@ const response = await getProject({
     setup();
     // 画面幅で offset(=rootMargin)が変わるため、リサイズ時に再構築
     window.addEventListener("resize", setup);
+
+    // footer までスクロールしたら logo を下方(546px ライン)へアニメーション
+    const footer = document.querySelector<HTMLElement>(".footer");
+    if (footer) {
+      const footerObserver = new IntersectionObserver(
+        ([entry]) => {
+          logo.classList.toggle("is-bottom", entry.isIntersecting);
+        },
+        // 画面下端から 80% 上(=画面上部 20% 地点)に footer 上端が達したら発火
+        { rootMargin: "0px 0px -80% 0px", threshold: 0 },
+      );
+      footerObserver.observe(footer);
+    }
   }
 </script>

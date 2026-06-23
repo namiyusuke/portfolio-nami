@@ -23,6 +23,9 @@ dependencies:
   lenis:
     specifier: ^1.3.23
     version: 1.3.23
+  swiper:
+    specifier: ^12.2.0
+    version: 12.2.0
   swup:
     specifier: ^4.9.2
     version: 4.9.2
@@ -5330,6 +5333,11 @@ packages:
       csso: 5.0.5
       picocolors: 1.1.1
       sax: 1.6.0
+    dev: false
+
+  /swiper@12.2.0:
+    resolution: {integrity: sha512-K8uXsBZU6ME97Ia3xbBge8IRCnR1lOmIILzvY/jGVic7dSTQ530s3uO8RvXbPUtkkXLWIwmZLRPbtDxRWVAFdg==}
+    engines: {node: '>= 4.7.0'}
     dev: false
 
   /swup@4.9.2:

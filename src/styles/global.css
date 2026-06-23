@@ -570,3 +570,19 @@ body {
   --ff-mincho: "Zen Old Mincho", serif;
   --ff-gothic: "Zen Kaku Gothic New", sans-serif;
 }
+.cover-bg:after {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  content: "";
+  background-color: #555;
+  mix-blend-mode: multiply;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+.is-fadeOut .cover-bg:after {
+  opacity: 0.77;
+}
