@@ -5,7 +5,11 @@ import { initSwup, registerPageInit, registerPageTransition } from "./libs/swup.
 import { enter, initial, leave } from "./libs/transition.js";
 import Observer from "./libs/observer.js";
 import { initNoteSwiper } from "./libs/swiper.js";
+import { initHeaderWeather } from "./libs/header-weather.js";
 initLenis();
+
+// ヘッダーは #swup の外にあり遷移時も保持されるため、初回に一度だけ更新する
+initHeaderWeather();
 
 registerPageTransition({
   initial,
@@ -21,6 +25,16 @@ registerPageInit(() => {
     ".js-fadeOut",
     {
       rootMargin: "0% 0% 0% 0%",
+      threshold: 0,
+      once: false,
+    },
+    true,
+    true,
+  );
+  const _headerObserver = new Observer(
+    ".js-section",
+    {
+      rootMargin: "0% 0% -20% 0%",
       threshold: 0,
       once: false,
     },

@@ -586,3 +586,14 @@ body {
 .is-fadeOut .cover-bg:after {
   opacity: 0.77;
 }
+.header-nav {
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    opacity 0.4s,
+    visibility 0.4s;
+}
+.is-section .header-nav {
+  visibility: visible;
+  opacity: 1;
+}
