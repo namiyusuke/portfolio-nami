@@ -13,7 +13,6 @@ const navLists = [
   },
 ];
 ---
-
 <header class="header">
   <h1 class="logo__text">
     <span
@@ -23,30 +22,19 @@ const navLists = [
       style={`--logo:url(${logo.src}); width:${logo.width}px; height:${logo.height}px;`}
     ></span>
   </h1>
-  <p class="header-date">
-    <span class="header-date-text">二〇二六年 卯月／晴明</span>
-  </p>
-    <p class="header-temperature">
-    <span class="header-temperature-text">気温20°</span>
-  </p>
   <nav class="header-nav">
     <ul class="header-nav-list">
       <li class="header-nav-item">
         <a href="#">
-          <span class="header-nav-en">about</span>
-          <span class="header-nav-ja">志</span>
+          aaa
         </a>
       </li>
       <li class="header-nav-item">
         <a href="#">
-          <span class="header-nav-en">project</span>
-          <span class="header-nav-ja">実例</span>
         </a>
       </li>
       <li class="header-nav-item">
         <a href="#">
-          <span class="header-nav-en">contact</span>
-          <span class="header-nav-ja">問合</span>
         </a>
       </li>
     </ul>
@@ -55,100 +43,5 @@ const navLists = [
 
 <style>
 
-  .header-nav{
-    position: fixed;
-    right: 0;
-    top: 0;
-    z-index: 10;
-    color: #fff;
-
-  }
-  .header-nav-ja{
-    font-size: 25px;
-    font-family: var(--ff-mincho);
-    font-weight: 400;
-    line-height: 1.2;
-  }
-  .header-nav-en{
-    font-size: 15px;
-    font-family: var(--ff-gothic);
-    font-weight: 400;
-    line-height: 1.2;
-  }
-  .header-nav-list{
-    display: flex;
-    column-gap: 30px;
-  }
-
-  .header__inner {
-    padding-block: var(--space-sm);
-    padding-inline: var(--offset-md);
-  }
-  .header__text{
-    font-family: var(--ff-mincho);
-  }
-  .logo__text{
-    position: fixed;
-    /* 背景は緑 */
-    background-color: #46FE6E;
-    margin: 0;
-    padding-block: 20px;
-    padding-left: 22px;
-    padding-right: 38px;
-    z-index: 100;
-  }
-  .header-date{
-    position: fixed;
-    font-family: var(--ff-mincho);
-    right: 0;
-    bottom: 35px;
-    font-size: 15px;
-    background-color: #46FE6E;
-     mix-blend-mode: difference;
-    margin: 0;
-    padding-top: 20px;
-    padding-right: 40px;
-    padding-left: 7px;
-    z-index: 100;
-    writing-mode: vertical-lr;
-  }
-  .header-temperature{
-    position: fixed;
-    font-family: var(--ff-mincho);
-    right: 0;
-    bottom: 0;
-    font-size: 15px;
-    background-color: #46FE6E;
-    mix-blend-mode: difference;
-    margin: 0;
-    padding-bottom: 13px;
-    padding-right: 70px;
-    padding-left: 7px;
-    z-index: 100;
-  }
-  .header-date-text{
-      color: #fff;
-      mix-blend-mode: difference;
-  }
-  /* ロゴSVGをマスクにして白で塗り、緑背景をその形のまま反転する */
-  .logo__shape{
-    display: block;
-    background-color: #fff;
-    -webkit-mask: var(--logo) no-repeat center / contain;
-    mask: var(--logo) no-repeat center / contain;
-    mix-blend-mode: difference;
-  }
-  .header-nav-item{
-    writing-mode: vertical-lr;
-  }
-  .header-nav-ja,
-  .header-nav-en{
-    display: block;
-  }
-  .header-nav{
-    position: fixed;
-    top: 80px;
-    right:60px ;
-  }
 
 </style>

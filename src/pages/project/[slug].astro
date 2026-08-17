@@ -1,0 +1,115 @@
+---
+// Config
+import { SITE } from "@src/config";
+
+// Layout
+import Layout from "@layouts/Layout.astro";
+
+// Sanity
+import { getProjects, urlFor, type Project } from "@src/libs/sanity";
+
+// 静的ビルドなので、slug ごとのページを一覧からまとめて生成する
+export const getStaticPaths = async () => {
+  const projects = await getProjects(100);
+
+  return projects.map((project) => ({
+    params: { slug: project.slug.current },
+    props: { project },
+  }));
+};
+
+interface Props {
+  project: Project;
+}
+
+const { project } = Astro.props;
+const { thumbnail } = project;
+
+// 詳細ではメインビジュアルとして大きめに出す
+const MAIN_WIDTH = 1200;
+---
+
+<Layout
+  title={`${project.title} | ${SITE.name}`}
+  description={project.subtitle ?? project.title}
+>
+  <main class="project">
+    <header class="project__head">
+      <h1 class="project__title">{project.title}</h1>
+      {project.subtitle && <p class="project__subtitle">{project.subtitle}</p>}
+      {project.award && <p class="project__award">{project.award}</p>}
+    </header>
+    {
+      thumbnail && (
+        <figure class="project__thumb">
+          <img
+            src={urlFor(thumbnail).width(MAIN_WIDTH).url()}
+            width={MAIN_WIDTH}
+            height={Math.round(MAIN_WIDTH / thumbnail.dimensions.aspectRatio)}
+            alt={thumbnail.alt ?? project.title}
+          />
+        </figure>
+      )
+    }
+
+    <p class="project__back">
+      <a href={`${SITE.base}/`}>一覧に戻る</a>
+    </p>
+  </main>
+</Layout>
+
+<style>
+  .project {
+    position: relative;
+    z-index: 10;
+    width: calc(1196 / 1440 * 100%);
+    margin-inline: auto;
+    padding-block: 120px;
+    color: #282727;
+  }
+
+  .project__head {
+    margin-bottom: 40px;
+  }
+
+  .project__title {
+    font-family: var(--ff-mincho);
+    font-size: 40px;
+    line-height: 1.4;
+  }
+
+  .project__subtitle {
+    margin-top: 12px;
+    font-size: 16px;
+  }
+
+  .project__award {
+    margin-top: 12px;
+    font-size: 14px;
+    color: #46fe6e;
+  }
+
+  .project__thumb {
+    margin: 0;
+  }
+
+  .project__thumb img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .project__back {
+    margin-top: 60px;
+  }
+
+  .project__back a {
+    display: inline-flex;
+    padding-inline: 24px;
+    padding-block: 12px;
+    font-size: 14px;
+    color: #46fe6e;
+    border: #46fe6e 1px solid;
+    border-radius: 30px;
+  }
+</style>

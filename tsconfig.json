@@ -3,6 +3,7 @@
   "include": [".astro/types.d.ts", "**/*"],
   "exclude": ["dist", "configs"],
   "compilerOptions": {
+    "types": ["@sanity/astro/module"],
     "baseUrl": ".",
     "paths": {
       "@src/*": ["src/*"],

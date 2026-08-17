@@ -1,11 +1,12 @@
 import "swiper/css";
-
+import { initAnimationSlider } from "./libs/animation-slider.js";
+import { initHeaderWeather } from "./libs/header-weather.js";
 import { initLenis, resetScroll } from "./libs/lenis.js";
+import Observer from "./libs/observer.js";
+import { initProjectFold } from "./libs/project-fold.js";
+import { initNoteSwiper } from "./libs/swiper.js";
 import { initSwup, registerPageInit, registerPageTransition } from "./libs/swup.js";
 import { enter, initial, leave } from "./libs/transition.js";
-import Observer from "./libs/observer.js";
-import { initNoteSwiper } from "./libs/swiper.js";
-import { initHeaderWeather } from "./libs/header-weather.js";
 initLenis();
 
 // ヘッダーは #swup の外にあり遷移時も保持されるため、初回に一度だけ更新する
@@ -44,6 +45,9 @@ registerPageInit(() => {
   // ページごとに動かす関数はすべてこの中で呼ぶ。
   // Swup遷移後はDOMが差し替わるため、ここに登録しないと2ページ目以降で動かなくなる。
   initNoteSwiper();
+  // 前ページのインスタンス破棄も関数内で行うため、遷移のたびに呼んでよい
+  initAnimationSlider();
+  initProjectFold();
 });
 
 initSwup();
