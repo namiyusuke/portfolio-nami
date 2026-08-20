@@ -112,12 +112,12 @@ console.log(projects);
     font-family: var(--ff-mincho);
   }
 
-  /* 板の縁は alpha で抜くので、背景が明るいと効果が見えない */
+  /* 板の縁は alpha で抜くので、背面はサイト共通の暗い背景を透かす */
   .is-webgl .p-animation__stage {
     position: sticky;
     top: 0;
     height: 100svh;
-    background-color: #333;
+    background-color: transparent;
   }
 
   .p-animation__canvas {
@@ -178,11 +178,11 @@ console.log(projects);
     font-family: var(--ff-mincho);
   }
 
-  /* 板の縁は alpha で抜くので、背景が明るいと効果が見えない */
+  /* 板の縁は alpha で抜くので、背面はサイト共通の暗い背景を透かす */
   .is-webgl .p-project__stage {
     position: relative;
     height: 100svh;
-    background-color: #333;
+    background-color: transparent;
   }
 
   .p-project__canvas {
