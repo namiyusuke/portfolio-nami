@@ -4,6 +4,7 @@ import { initHeaderWeather } from "./libs/header-weather.js";
 import { initLenis, resetScroll } from "./libs/lenis.js";
 import Observer from "./libs/observer.js";
 import { initProjectFold } from "./libs/project-fold.js";
+import { initProjectHero } from "./libs/project-hero.js";
 import { initNoteSwiper } from "./libs/swiper.js";
 import { initSwup, registerPageInit, registerPageTransition } from "./libs/swup.js";
 import { enter, initial, leave } from "./libs/transition.js";
@@ -48,6 +49,8 @@ registerPageInit(() => {
   // 前ページのインスタンス破棄も関数内で行うため、遷移のたびに呼んでよい
   initAnimationSlider();
   initProjectFold();
+  // 詳細ページのメイン画像を板と同じ矩形に合わせる(遷移演出の着地先になる)
+  initProjectHero();
 });
 
 initSwup();

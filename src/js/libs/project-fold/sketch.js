@@ -1,5 +1,11 @@
 import gsap from "gsap";
 import * as THREE from "three/webgpu";
+import { getLenis } from "../lenis.js";
+import { clearPageExit, registerPageExit } from "../page-exit.js";
+import { handoffProjectHero, HERO_HANDOFF_CLASS } from "../project-hero.js";
+import { getSwup } from "../swup.js";
+// 板のサイズ・カメラ設定は詳細ページの画像配置と共有する(遷移で画像を動かさないため)
+import { CAMERA_FOV, CAMERA_Z, PLANE_HEIGHT, PLANE_WIDTH, plateScale } from "./plate-metrics.js";
 import {
   float,
   Fn,
@@ -16,12 +22,6 @@ import {
   vec3,
 } from "three/tsl";
 
-// 板のサイズ。data-texture もこの比率(1.6:1)で切り出している
-const PLANE_WIDTH = 1.6;
-const PLANE_HEIGHT = 1;
-// 板が画面幅・画面高に対して占める最大比率(左右上下の余白を確保する)
-const PLANE_FIT = 0.82;
-
 const BG_Z = -2; // 背景テキスト板の奥行き
 // マーキーは上下中央の1行だけ。行の高さは表示範囲の高さに対する比率で決める
 const BG_ROW_HEIGHT = 1 / 6;
@@ -31,6 +31,10 @@ const TEXT_OPACITY = 0.35;
 const FADE_HOLD = 2.6; // 次のプロジェクトへ切り替わるまでの待ち時間(秒)
 const FADE_DURATION = 1.2; // クロスフェードにかける時間(秒)
 const FOLD_DURATION = 2.4; // 折りたたみ / 展開にかける時間(秒)
+
+// 遷移演出（折りたたみの続き）
+const ALIGN_DURATION = 0.6; // ステージをビューポートに揃えるスクロールの時間(秒)
+const LAND_FALLBACK = 4000; // 入場側が呼ばれなかったときに板を片付けるまで(ms)
 
 // tsl-easings を足さずに済むよう、使う2本だけ TSL で持つ
 const easeOutQuad = (x) => x.oneMinus().pow(2).oneMinus();
@@ -66,17 +70,25 @@ const makeTextTexture = (text, { height = 256, fontSize = 170, gap = 140 } = {})
 
 // Projects セクションの WebGPU ステージ。
 // 板は常に1枚で、テクスチャ(=プロジェクト)を一定間隔でクロスフェードしながら
-// 巡回する。板をクリックすると折りたたみ / 展開がトグルし、その間は巡回を止める。
+// 巡回する。板(またはタイトルのリンク)をクリックすると折りたたみが始まり、
+// めくれた板を画面に残したまま中身が詳細ページに差し替わる → その板が
+// 詳細ページのメイン画像の位置へ収まって実物と入れ替わる、という流れで遷移する。
 export default class ProjectFold {
-  constructor({ section, container, items, textures, texts }) {
+  constructor({ section, container, items, textures, texts, release }) {
     this.section = section;
     this.container = container;
     this.items = items;
     this.texts = texts;
     this.urls = textures;
+    this.release = release;
     this.disposed = false;
     this.current = 0;
     this.folded = false;
+    this.leaving = false;
+    // canvas を body 直下へ移して、遷移をまたいで見せている間 true
+    this.detached = false;
+    this.exitTweens = [];
+    this.exitResolvers = [];
     this.time = 0;
 
     this.uniforms = {
@@ -109,8 +121,8 @@ export default class ProjectFold {
     this.container.appendChild(this.renderer.domElement);
 
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(70, this.width / this.height, 0.01, 100);
-    this.camera.position.set(0, 0, 1.5);
+    this.camera = new THREE.PerspectiveCamera(CAMERA_FOV, this.width / this.height, 0.01, 100);
+    this.camera.position.set(0, 0, CAMERA_Z);
 
     this.loader = new THREE.TextureLoader();
     // テクスチャは Sanity の CDN から読むので CORS 必須。
@@ -133,6 +145,10 @@ export default class ProjectFold {
     window.addEventListener("resize", this.onResize);
     this.setupPointer();
     this.startCycle();
+
+    // 詳細ページへの遷移は、この板の折りたたみを退場演出として使う
+    this.pageExit = this.handlePageExit.bind(this);
+    registerPageExit(this.pageExit);
 
     // Lenis と同じ gsap.ticker に乗せて描画ループを1本化する
     this.tick = this.render.bind(this);
@@ -246,9 +262,9 @@ export default class ProjectFold {
     });
   }
 
-  // メッシュ自体をクリックしたときだけトグルする。
+  // メッシュ自体をクリックしたときだけ反応する。
   // 折りたたみは頂点シェーダ側の変形なので、レイキャストの当たり判定は
-  // 変形前の平面（progress=0 の見た目）のまま。折った状態でも元の矩形をクリックで戻る
+  // 変形前の平面（progress=0 の見た目）のまま
   setupPointer() {
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
@@ -273,7 +289,7 @@ export default class ProjectFold {
     this.onPointerDown = (event) => {
       updatePointer(event);
       if (hitMesh()) {
-        this.toggleFold();
+        this.openCurrent();
       }
     };
 
@@ -281,25 +297,198 @@ export default class ProjectFold {
     el.addEventListener("pointerdown", this.onPointerDown);
   }
 
-  toggleFold() {
-    this.folded = !this.folded;
-    this.foldTween?.kill();
-    this.foldTween = gsap.to(this.uniforms.progress, {
-      value: this.folded ? 1 : 0,
+  // 表示中の項目（クロスフェードで半分を超えた側が「見えている」板）
+  currentItem() {
+    const index =
+      this.uniforms.texMix.value > 0.5 ? (this.current + 1) % this.items.length : this.current;
+    return this.items[index];
+  }
+
+  // 板をクリック = 表示中のプロジェクトへ遷移。
+  // 遷移を先に始めておくと、折りたたみを見せている間に次ページの取得が進むので、
+  // アニメーションが終わったところで待ち時間なく詳細ページへ繋がる
+  openCurrent() {
+    if (this.leaving) {
+      return;
+    }
+
+    const href = this.currentItem()?.querySelector("a")?.href;
+    if (!href) {
+      return;
+    }
+
+    const swup = getSwup();
+    if (!swup) {
+      // Swup が無い（= 素の遷移）場合は、演出を見せ切ってから移動する
+      this.playExit().then(() => {
+        window.location.href = href;
+      });
+      return;
+    }
+
+    // 実際の演出は leave フックから handlePageExit() が再生する
+    swup.navigate(href);
+  }
+
+  // 遷移演出の引き受け。行き先がこのセクションのプロジェクトなら退場 / 入場を返す。
+  // タイトルのリンクを直接クリックした遷移もここを通る
+  handlePageExit(visit) {
+    if (this.disposed || !visit?.to?.url) {
+      return null;
+    }
+
+    const path = new URL(visit.to.url, window.location.href).pathname;
+    const index = this.items.findIndex((item) => {
+      const link = item.querySelector("a");
+      return link ? new URL(link.href).pathname === path : false;
+    });
+    if (index < 0) {
+      return null;
+    }
+
+    this.cycle?.pause();
+    // クロスフェードの途中で踏まれても、遷移先の板を表向きに確定させてから折る
+    if (this.current !== index || this.uniforms.texMix.value > 0) {
+      this.current = index;
+      this.uniforms.texMix.value = 0;
+      this.applyTextures();
+      this.syncItems();
+    }
+
+    return {
+      leave: this.playExit(),
+      enter: () => this.playReveal(),
+    };
+  }
+
+  // 退場。板を折りたたみ、折り終わったところで canvas をページから切り離す。
+  // 板は動かさずその場に残るので、裏で中身が差し替わっても画面上は何も動かない
+  async playExit() {
+    this.leaving = true;
+    this.folded = true;
+    this.section.classList.add("is-folded");
+    // 遷移先のメイン画像は、板から位置を引き渡すまで隠しておく
+    document.documentElement.classList.add(HERO_HANDOFF_CLASS);
+
+    // 板が画面から外れていると引き渡せないので、位置を揃えてスクロールを止める
+    this.lockStage();
+
+    await this.tweenTo(this.uniforms.progress, {
+      value: 1,
       duration: FOLD_DURATION,
       ease: "none", // イージングはシェーダ側の ramp で掛けている
     });
-
-    // 折りたたみ中はプロジェクトの巡回を止める（戻したら再開）
-    if (this.folded) {
-      this.cycle?.pause();
-    } else {
-      this.cycle?.resume();
+    if (this.disposed) {
+      return;
     }
-    this.section.classList.toggle("is-folded", this.folded);
+
+    this.detachCanvas();
+  }
+
+  // 入場。板が映っている矩形をそのまま遷移先の画像に写してから入れ替える。
+  // 位置を計算し直さず実測値を渡すので、ヘッダーの有無やスクロール位置に関わらずズレない。
+  // アニメーションは挟まない(＝画像は動かない・大きさも変わらない)。
+  // ただし「入場を引き受けた」ことを伝えるため、Promise は返しておく(既定のフェード回避)
+  async playReveal() {
+    clearTimeout(this.landTimer);
+    if (this.disposed) {
+      return;
+    }
+
+    // 画像を板と同じ位置に置き、描ける状態になるまで待ってから引き渡す
+    await handoffProjectHero(this.plateRect());
+    if (this.disposed) {
+      return;
+    }
+
+    // destroy が canvas を消し、隠していた画像を出す。同じフレームで入れ替わる
+    this.destroy();
+  }
+
+  // 板が今ビューポート上に映っている矩形(px)
+  plateRect() {
+    const canvas = this.renderer.domElement.getBoundingClientRect();
+    const view = this.getViewSize(this.plateDistance());
+    const pxPerX = canvas.width / view.width;
+    const pxPerY = canvas.height / view.height;
+    const width = PLANE_WIDTH * this.mesh.scale.x * pxPerX;
+    const height = PLANE_HEIGHT * this.mesh.scale.y * pxPerY;
+
+    return {
+      left: canvas.left + canvas.width / 2 + this.mesh.position.x * pxPerX - width / 2,
+      top: canvas.top + canvas.height / 2 - this.mesh.position.y * pxPerY - height / 2,
+      width,
+      height,
+    };
+  }
+
+  // カメラから板までの距離。折り終わった板は頂点シェーダ側で半分の高さぶん手前に出ている
+  plateDistance() {
+    return this.camera.position.z - this.mesh.position.z - PLANE_HEIGHT * 0.5 * this.mesh.scale.z;
+  }
+
+  // 演出用の tween。destroy が割り込んでも待ち側が止まらないよう resolve を控えておく
+  tweenTo(target, vars) {
+    return new Promise((resolve) => {
+      this.exitResolvers.push(resolve);
+      this.exitTweens.push(gsap.to(target, { ...vars, onComplete: resolve }));
+    });
+  }
+
+  // ステージの上端をビューポートの上端に合わせ、演出中はスクロールを止める。
+  // 途中で動かされると板の位置がずれて、引き渡し先の画像もその位置に付いていってしまう
+  lockStage() {
+    const lenis = getLenis();
+    if (!lenis) {
+      const top = this.container.getBoundingClientRect().top;
+      if (Math.abs(top) >= 2) {
+        window.scrollBy({ top, behavior: "smooth" });
+      }
+      return;
+    }
+
+    lenis.stop();
+    // stop() 中はスクロール入力を受け付けないが、force を付けた位置合わせだけは通す
+    lenis.scrollTo(this.container, { duration: ALIGN_DURATION, force: true });
+  }
+
+  unlockStage() {
+    getLenis()?.start();
+  }
+
+  // canvas を body 直下の固定要素に移す。
+  // Swup が #swup の中身を差し替えても板と背景のテキスト帯はそのまま画面に残り、
+  // マーキーも動き続けたまま、差し替わった先の画像へ繋がる
+  detachCanvas() {
+    const el = this.renderer.domElement;
+    // 今見えている位置のまま固定に切り替える(＝切り離しても見た目は 1px も動かない)
+    const rect = el.getBoundingClientRect();
+
+    this.detached = true;
+
+    el.style.position = "fixed";
+    el.style.top = `${rect.top}px`;
+    el.style.left = `${rect.left}px`;
+    el.style.zIndex = "9990";
+    el.style.pointerEvents = "none";
+    document.body.appendChild(el);
+    // 貼り替え直後の canvas は中身が空になることがあるので、その場で描き直す
+    this.renderer.render(this.scene, this.camera);
+
+    // canvas は固定になったので、以降スクロールされても板は動かない
+    this.unlockStage();
+    // ページ差し替え時の destroy 対象から外し、後始末は playReveal() 側で行う
+    this.release?.();
+    // 遷移が中断された場合に板が残り続けないようにする
+    this.landTimer = setTimeout(() => this.destroy(), LAND_FALLBACK);
   }
 
   resize() {
+    // 切り離したあとは container から離れているので、サイズは触らない
+    if (this.detached) {
+      return;
+    }
+
     this.width = this.container.offsetWidth;
     this.height = this.container.offsetHeight;
     if (this.width === 0 || this.height === 0) {
@@ -311,13 +500,7 @@ export default class ProjectFold {
     this.camera.updateProjectionMatrix();
 
     // 板が画面からはみ出さないよう、表示範囲に対して縮める
-    const view = this.getViewSize(this.camera.position.z);
-    const scale = Math.min(
-      1,
-      (view.width * PLANE_FIT) / PLANE_WIDTH,
-      (view.height * PLANE_FIT) / PLANE_HEIGHT,
-    );
-    this.mesh.scale.setScalar(scale);
+    this.mesh.scale.setScalar(plateScale(this.camera.aspect));
 
     this.layoutBackground();
   }
@@ -350,20 +533,23 @@ export default class ProjectFold {
       return;
     }
 
-    // 画面外のセクションは描画せず、プロジェクトの巡回も止めておく
-    // （見に来たときに必ず1件目から始まるように）
-    const rect = this.section.getBoundingClientRect();
-    const visible = rect.bottom > 0 && rect.top < window.innerHeight;
-    if (visible !== this.visible) {
-      this.visible = visible;
-      if (!visible) {
-        this.cycle?.pause();
-      } else if (!this.folded) {
-        this.cycle?.resume();
+    // 切り離している間はセクションから離れているので、常に描き続ける
+    if (!this.detached) {
+      // 画面外のセクションは描画せず、プロジェクトの巡回も止めておく
+      // （見に来たときに必ず1件目から始まるように）
+      const rect = this.section.getBoundingClientRect();
+      const visible = rect.bottom > 0 && rect.top < window.innerHeight;
+      if (visible !== this.visible) {
+        this.visible = visible;
+        if (!visible) {
+          this.cycle?.pause();
+        } else if (!this.folded) {
+          this.cycle?.resume();
+        }
       }
-    }
-    if (!visible) {
-      return;
+      if (!visible) {
+        return;
+      }
     }
 
     // デモの「1フレーム +0.05」を 60fps 基準の秒速に直した値
@@ -380,8 +566,24 @@ export default class ProjectFold {
     }
     this.disposed = true;
 
+    if (this.pageExit) {
+      clearPageExit(this.pageExit);
+    }
+    // 引き渡し完了。隠していた遷移先の画像を出し、止めていたスクロールも戻す
+    document.documentElement.classList.remove(HERO_HANDOFF_CLASS);
+    this.unlockStage();
+
+    clearTimeout(this.landTimer);
     this.cycle?.kill();
-    this.foldTween?.kill();
+    for (const tween of this.exitTweens) {
+      tween.kill();
+    }
+    // 演出の途中で破棄された場合に、待っている leave / enter を取りこぼさない
+    for (const resolve of this.exitResolvers) {
+      resolve();
+    }
+    this.exitTweens = [];
+    this.exitResolvers = [];
     if (this.tick) {
       gsap.ticker.remove(this.tick);
     }

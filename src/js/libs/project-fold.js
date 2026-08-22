@@ -50,7 +50,20 @@ export const initProjectFold = async () => {
   const texts = items.map((item) => item.dataset.text || "");
 
   try {
-    const sketch = new ProjectFold({ section, container, items, textures, texts });
+    const sketch = new ProjectFold({
+      section,
+      container,
+      items,
+      textures,
+      texts,
+      // 遷移をまたぐために canvas を body 直下へ移したあとは、
+      // ページ差し替え時の destroy 対象から外して sketch 自身に後始末を任せる
+      release: () => {
+        if (instance === sketch) {
+          instance = null;
+        }
+      },
+    });
     instance = sketch;
     await sketch.init();
     // init の待ち時間に遷移が起きていたら後始末する

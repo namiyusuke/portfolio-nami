@@ -4,6 +4,11 @@ import SwupScriptsPlugin from '@swup/scripts-plugin';
 import Swup from 'swup';
 import { sendPageView } from './analytics.js';
 
+// ページ内の演出から swup.navigate() を呼べるように、生成したインスタンスを保持する
+let swup = null;
+
+export const getSwup = () => swup;
+
 let onPageInit = () => {};
 let onInitial = () => Promise.resolve();
 let onLeave = () => Promise.resolve();
@@ -26,7 +31,7 @@ export const registerPageTransition = ({ initial, leave, enter } = {}) => {
 };
 
 export const initSwup = () => {
-  const swup = new Swup({
+  swup = new Swup({
     containers: ['#swup'],
     // CSSアニメーション検出を無効化(アニメーションは下のフックでGSAPが制御する)
     animationSelector: false,

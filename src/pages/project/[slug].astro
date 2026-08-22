@@ -25,8 +25,11 @@ interface Props {
 const { project } = Astro.props;
 const { thumbnail } = project;
 
-// 詳細ではメインビジュアルとして大きめに出す
-const MAIN_WIDTH = 1200;
+// メインビジュアルは一覧の板(WebGL)のテクスチャと同じ切り抜き・同じ URL にする。
+// 遷移演出でめくれた板がこの位置へ収まるので、絵がずれないことと、
+// 画像が使い回されて読み込みが起きないことの両方を狙っている
+const MAIN_WIDTH = 1280;
+const MAIN_HEIGHT = 800;
 ---
 
 <Layout
@@ -34,27 +37,43 @@ const MAIN_WIDTH = 1200;
   description={project.subtitle ?? project.title}
 >
   <main class="project">
-    <header class="project__head">
-      <h1 class="project__title">{project.title}</h1>
-      {project.subtitle && <p class="project__subtitle">{project.subtitle}</p>}
-      {project.award && <p class="project__award">{project.award}</p>}
-    </header>
-    {
-      thumbnail && (
-        <figure class="project__thumb">
-          <img
-            src={urlFor(thumbnail).width(MAIN_WIDTH).url()}
-            width={MAIN_WIDTH}
-            height={Math.round(MAIN_WIDTH / thumbnail.dimensions.aspectRatio)}
-            alt={thumbnail.alt ?? project.title}
-          />
-        </figure>
-      )
-    }
+    <div
+      class:list={[
+        "project__hero",
+        thumbnail ? "js-project-hero-stage" : "project__hero--text",
+      ]}
+    >
+      {
+        thumbnail && (
+          <figure class="project__thumb">
+            <img
+              class="js-project-hero"
+              crossorigin="anonymous"
+              src={urlFor(thumbnail)
+                .width(MAIN_WIDTH)
+                .height(MAIN_HEIGHT)
+                .fit("crop")
+                .auto("format")
+                .url()}
+              width={MAIN_WIDTH}
+              height={MAIN_HEIGHT}
+              alt={thumbnail.alt ?? project.title}
+            />
+          </figure>
+        )
+      }
+      <header class="project__head">
+        <h1 class="project__title">{project.title}</h1>
+        {project.subtitle && <p class="project__subtitle">{project.subtitle}</p>}
+        {project.award && <p class="project__award">{project.award}</p>}
+      </header>
+    </div>
 
-    <p class="project__back">
-      <a href={`${SITE.base}/`}>一覧に戻る</a>
-    </p>
+    <div class="project__body">
+      <p class="project__back">
+        <a href={`${SITE.base}/`}>一覧に戻る</a>
+      </p>
+    </div>
   </main>
 </Layout>
 
@@ -62,14 +81,57 @@ const MAIN_WIDTH = 1200;
   .project {
     position: relative;
     z-index: 10;
-    width: calc(1196 / 1440 * 100%);
-    margin-inline: auto;
-    padding-block: 120px;
     color: #282727;
   }
 
+  /* --------------------------------------------------------------
+   メインビジュアル
+   一覧の板(WebGL)がめくり終わった位置・大きさにそのまま重なるよう、
+   画面幅 × 100svh のステージの中央に、板と同じ寸法で置く。
+   実寸は project-hero.js が --p-project-hero-w / -h に書き込む
+   （下の値は JS が動くまでの目安。横長画面では実寸と一致する）。
+  -------------------------------------------------------------- */
+  .project__hero {
+    --p-project-hero-w: min(114.25svh, 98vw);
+    --p-project-hero-h: calc(var(--p-project-hero-w) / 1.6);
+    /* ステージ上端から測った画像の位置。実寸(ヘッダーのぶんのずれ込み)は JS が入れる */
+    --p-project-hero-top: calc((100svh - var(--p-project-hero-h)) / 2);
+
+    position: relative;
+    height: 100svh;
+  }
+
+  .project__thumb {
+    position: absolute;
+    inset-inline: 0;
+    top: var(--p-project-hero-top);
+    width: var(--p-project-hero-w);
+    margin-inline: auto;
+  }
+
+  .project__thumb img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* 画像は板と同じ位置から動かせないので、タイトルはその下端に合わせて置く */
   .project__head {
-    margin-bottom: 40px;
+    position: absolute;
+    inset-inline: 0;
+    top: calc(var(--p-project-hero-top) + var(--p-project-hero-h) + 24px);
+    text-align: center;
+  }
+
+  /* サムネイルが無い場合は素直に流し込む */
+  .project__hero--text {
+    height: auto;
+    padding-block: 120px;
+  }
+
+  .project__hero--text .project__head {
+    position: static;
+    text-align: left;
   }
 
   .project__title {
@@ -89,14 +151,10 @@ const MAIN_WIDTH = 1200;
     color: #46fe6e;
   }
 
-  .project__thumb {
-    margin: 0;
-  }
-
-  .project__thumb img {
-    display: block;
-    width: 100%;
-    height: auto;
+  .project__body {
+    width: calc(1196 / 1440 * 100%);
+    margin-inline: auto;
+    padding-block: 120px;
   }
 
   .project__back {
