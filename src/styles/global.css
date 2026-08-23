@@ -6,6 +6,7 @@
 html.lenis,
 html.lenis body {
   height: auto;
+
 }
 
 .lenis.lenis-smooth {
@@ -612,8 +613,8 @@ body::before {
   --ease-in-expo: cubic-bezier(0.7, 0, 0.84, 0);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
-  --ff-mincho: "Zen Old Mincho", serif;
-  --ff-gothic: "Zen Kaku Gothic New", sans-serif;
+  --ff-mincho: "Italiana", serif;
+  --ff-gothic: "Inter", sans-serif;
 }
 .cover-bg:after {
   position: fixed;
@@ -641,4 +642,13 @@ body::before {
 .is-section .header-nav {
   visibility: visible;
   opacity: 1;
+}
+.p-project__title{
+  font-family: var(--ff-mincho);
+  font-weight: 400;
+  font-size: min(calc(128 / 1440 * 100vw), 128px);
+  padding-inline: 46px;
+}
+.project__outline p{
+  font-weight: 400;
 }

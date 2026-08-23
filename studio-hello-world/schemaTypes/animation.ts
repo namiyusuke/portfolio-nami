@@ -41,6 +41,15 @@ export const animation = defineType({
       ],
     }),
     defineField({
+      name: 'video',
+      title: 'サムネイル動画',
+      description:
+        'MP4(H.264・音声なし)。トップの板に動く絵として貼る。未設定ならサムネイル画像のまま。' +
+        '変換なしでそのまま配信するので、幅 1200px・数秒ループ・数MB以内にしてからアップロードする。',
+      type: 'file',
+      options: {accept: 'video/mp4'},
+    }),
+    defineField({
       name: 'link',
       title: 'リンク',
       type: 'url',

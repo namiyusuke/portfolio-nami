@@ -20,6 +20,7 @@
     "lint:all": "pnpm lint && pnpm lint:css && pnpm lint:html"
   },
   "dependencies": {
+    "@portabletext/to-html": "^6.0.0",
     "@sanity/astro": "^3.5.0",
     "@sanity/client": "^7.26.2",
     "@sanity/image-url": "^2.1.1",
@@ -50,6 +51,7 @@
     "@astrojs/check": "^0.9.9",
     "@csstools/postcss-global-data": "^4.0.0",
     "@markuplint/astro-parser": "^4.18.3",
+    "@portabletext/types": "^4.0.2",
     "@types/node": "^25.9.3",
     "@yu_nami/markuplint-config": "^0.0.6",
     "@yu_nami/oxfmt-config": "^0.0.2",

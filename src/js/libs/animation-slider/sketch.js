@@ -7,10 +7,12 @@ import vertexShader from "./vertex.glsl?raw";
 // 1スライド送るのに必要なスクロール量。シェーダ内の pos.y と同じ単位で、
 // 板は 2.0 間隔で並んでいる想定。
 const UNITS_PER_SLIDE = 2;
-// タイトル（DOM）を1枚ぶん送ったときの X 軸回転量
-const ROTATION_ANGLE = 50;
-// 中央から1枚ぶん離れたタイトルの不透明度
-const MIN_OPACITY = 0.2;
+// タイトル（DOM）を1枚ぶん送ったときの X 軸回転量。
+// 小さいほど円筒の半径が詰まり、タイトル同士の間隔も狭くなる。
+const ROTATION_ANGLE = 32;
+// この角度まで回ったタイトルは完全に透明。1枚ぶん（ROTATION_ANGLE）より
+// 手前に置いて、隣に届く前に消えるようにする。
+const FADE_ANGLE = 22;
 // 中央からこの距離を超えた板は描画しない
 const CULL_DISTANCE = UNITS_PER_SLIDE * 1.5;
 
@@ -18,7 +20,7 @@ const CULL_DISTANCE = UNITS_PER_SLIDE * 1.5;
 // スクロール量はセクションの位置から毎フレーム求めるため、
 // Lenis（gsap.ticker で駆動）と二重にホイールを拾うことはない。
 export default class AnimationSlider {
-  constructor({ section, container, items, textures }) {
+  constructor({ section, container, items, textures, videos = [] }) {
     this.section = section;
     this.container = container;
     this.items = items;
@@ -46,7 +48,7 @@ export default class AnimationSlider {
     this.loader.setCrossOrigin("anonymous");
 
     this.createTimeline();
-    this.addObjects(textures);
+    this.addObjects(textures, videos);
 
     this.onResize = this.resize.bind(this);
     window.addEventListener("resize", this.onResize);
@@ -73,10 +75,10 @@ export default class AnimationSlider {
           duration: 1,
           ease: "none",
           onUpdate: () => {
-            // センター(0°)で 1、1枚ぶん離れたら MIN_OPACITY まで落とす
+            // センター(0°)で 1、FADE_ANGLE まで回ったら 0
             const rotation = gsap.getProperty(item, "rotationX");
-            const distance = Math.min(Math.abs(rotation) / ROTATION_ANGLE, 1);
-            item.style.opacity = 1 - (1 - MIN_OPACITY) * distance;
+            const distance = Math.min(Math.abs(rotation) / FADE_ANGLE, 1);
+            item.style.opacity = 1 - distance;
           },
         },
         "<",
@@ -84,16 +86,52 @@ export default class AnimationSlider {
     });
   }
 
-  addObjects(textures) {
+  addObjects(textures, videos) {
     // 板はすべて原点に置き、縦位置はシェーダの progress で動かす
     this.geometry = new THREE.PlaneGeometry(2, 1, 100, 100);
     this.meshes = textures.map((url, index) => {
       const material = this.createMaterial(url);
+      // 動画つきの項目は、読み込みが済んだ時点で静止画テクスチャと差し替わる
+      const video = videos[index] ? this.attachVideo(material, videos[index]) : null;
       const mesh = new THREE.Mesh(this.geometry, material);
       this.scene.add(mesh);
 
-      return { mesh, material, pos: index * UNITS_PER_SLIDE };
+      return { mesh, material, video, pos: index * UNITS_PER_SLIDE };
     });
+  }
+
+  // サムネイル動画をテクスチャに流し込むための video 要素。
+  // DOM には挿さず、貼り替えは loadeddata まで待つ（先に貼ると最初の数フレームが真っ黒になる）。
+  // 再生の開始・停止は render() が板の可視状態に合わせて行う。
+  attachVideo(material, url) {
+    const video = document.createElement("video");
+    // 画像テクスチャと同じく CORS 必須。src より先に立てる
+    video.crossOrigin = "anonymous";
+    // 自動再生の条件（ミュート + インライン再生）。iOS Safari 向けに属性でも立てる
+    video.muted = true;
+    video.defaultMuted = true;
+    video.setAttribute("muted", "");
+    video.playsInline = true;
+    video.setAttribute("playsinline", "");
+    video.loop = true;
+    video.preload = "auto";
+
+    video.addEventListener(
+      "loadeddata",
+      () => {
+        if (this.disposed) {
+          return;
+        }
+
+        material.uniforms.uTexture.value?.dispose();
+        material.uniforms.uTexture.value = new THREE.VideoTexture(video);
+      },
+      { once: true },
+    );
+
+    video.src = url;
+
+    return video;
   }
 
   createMaterial(url) {
@@ -142,9 +180,13 @@ export default class AnimationSlider {
       return;
     }
 
-    // 画面外のセクションは描画しない
+    // 画面外のセクションは描画しない（動画のデコードも止める）
     const rect = this.section.getBoundingClientRect();
     if (rect.bottom < 0 || rect.top > window.innerHeight) {
+      for (const item of this.meshes) {
+        this.setPlaying(item, false);
+      }
+
       return;
     }
 
@@ -156,9 +198,24 @@ export default class AnimationSlider {
       const offset = scroll - item.pos;
       item.mesh.visible = Math.abs(offset) < CULL_DISTANCE;
       item.material.uniforms.progress.value = offset;
+      // 同時デコードを抑えるため、見えている板の動画だけ再生する
+      this.setPlaying(item, item.mesh.visible);
     }
 
     this.renderer.render(this.scene, this.camera);
+  }
+
+  // 自動再生を拒否されることがあるので play() の失敗は無視する（静止画のまま残る）
+  setPlaying({ video }, playing) {
+    if (!video) {
+      return;
+    }
+
+    if (playing && video.paused) {
+      video.play().catch(() => {});
+    } else if (!playing && !video.paused) {
+      video.pause();
+    }
   }
 
   // Swup 遷移で DOM が差し替わるたびに呼ぶ。
@@ -174,10 +231,17 @@ export default class AnimationSlider {
     this.timeline.kill();
     gsap.set(this.items, { clearProps: "all" });
 
-    for (const { mesh, material } of this.meshes) {
+    for (const { mesh, material, video } of this.meshes) {
       this.scene.remove(mesh);
       material.uniforms.uTexture.value?.dispose();
       material.dispose();
+
+      if (video) {
+        // src を外して load() し直さないと、破棄後もダウンロードが続くことがある
+        video.pause();
+        video.removeAttribute("src");
+        video.load();
+      }
     }
     this.geometry.dispose();
 

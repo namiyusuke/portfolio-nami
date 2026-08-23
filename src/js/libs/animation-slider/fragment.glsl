@@ -9,5 +9,5 @@ void main() {
   // 奥（カメラから遠い側）へ回り込んだ面ほど透過させて、板の重なりをぼかす
   float alpha = smoothstep(-.7, 0., vPosition.z);
 
-  gl_FragColor = vec4(color, alpha);
+  gl_FragColor = vec4(color, 1.0);
 }

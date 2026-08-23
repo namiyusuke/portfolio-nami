@@ -48,6 +48,8 @@ export const initProjectFold = async () => {
   }
 
   const texts = items.map((item) => item.dataset.text || "");
+  // 板の形はサムネの比率に合わせる(index.astro が data-aspect に入れている)
+  const aspects = items.map((item) => Number(item.dataset.aspect));
 
   try {
     const sketch = new ProjectFold({
@@ -56,6 +58,7 @@ export const initProjectFold = async () => {
       items,
       textures,
       texts,
+      aspects,
       // 遷移をまたぐために canvas を body 直下へ移したあとは、
       // ページ差し替え時の destroy 対象から外して sketch 自身に後始末を任せる
       release: () => {

@@ -5,11 +5,19 @@ import { clearPageExit, registerPageExit } from "../page-exit.js";
 import { handoffProjectHero, HERO_HANDOFF_CLASS } from "../project-hero.js";
 import { getSwup } from "../swup.js";
 // 板のサイズ・カメラ設定は詳細ページの画像配置と共有する(遷移で画像を動かさないため)
-import { CAMERA_FOV, CAMERA_Z, PLANE_HEIGHT, PLANE_WIDTH, plateScale } from "./plate-metrics.js";
+import {
+  CAMERA_FOV,
+  CAMERA_Z,
+  DEFAULT_ASPECT,
+  FOLD_DEPTH,
+  PLANE_HEIGHT,
+  plateScale,
+} from "./plate-metrics.js";
 import {
   float,
   Fn,
   frontFacing,
+  min,
   mix,
   positionLocal,
   pow,
@@ -33,6 +41,9 @@ const FADE_DURATION = 1.2; // クロスフェードにかける時間(秒)
 const FOLD_DURATION = 2.4; // 折りたたみ / 展開にかける時間(秒)
 
 // 遷移演出（折りたたみの続き）
+// 背景の流れる文字を消す時間(秒)。DOM 側のタイトル(.p-project__list / __title)は
+// index.astro の .is-folded で同じ長さのフェードを掛けているので、値を揃えること
+const TEXT_FADE_DURATION = 0.6;
 const ALIGN_DURATION = 0.6; // ステージをビューポートに揃えるスクロールの時間(秒)
 const LAND_FALLBACK = 4000; // 入場側が呼ばれなかったときに板を片付けるまで(ms)
 
@@ -74,12 +85,17 @@ const makeTextTexture = (text, { height = 256, fontSize = 170, gap = 140 } = {})
 // めくれた板を画面に残したまま中身が詳細ページに差し替わる → その板が
 // 詳細ページのメイン画像の位置へ収まって実物と入れ替わる、という流れで遷移する。
 export default class ProjectFold {
-  constructor({ section, container, items, textures, texts, release }) {
+  constructor({ section, container, items, textures, texts, aspects, release }) {
     this.section = section;
     this.container = container;
     this.items = items;
     this.texts = texts;
     this.urls = textures;
+    // 板の形はテクスチャの比率そのまま。取れなかったものだけ既定値で埋める
+    this.aspects = textures.map((_, index) => {
+      const aspect = Number(aspects?.[index]);
+      return aspect > 0 ? aspect : DEFAULT_ASPECT;
+    });
     this.release = release;
     this.disposed = false;
     this.current = 0;
@@ -95,6 +111,8 @@ export default class ProjectFold {
       time: uniform(0),
       progress: uniform(0), // 0 = 平ら / 1 = 折りたたみ完了
       texMix: uniform(0), // 0 = current / 1 = next
+      plateAspect: uniform(DEFAULT_ASPECT), // 今の板の比率(クロスフェード中は current と next の中間)
+      texAspect: uniform(new THREE.Vector2(DEFAULT_ASPECT, DEFAULT_ASPECT)), // 各テクスチャの比率(x=current, y=next)
       textRepeat: uniform(new THREE.Vector2(1, 1)), // 背景テキストの横タイル数(x=current, y=next)
       textSpeed: uniform(TEXT_SPEED),
       textOpacity: uniform(TEXT_OPACITY),
@@ -156,25 +174,38 @@ export default class ProjectFold {
   }
 
   addObjects() {
-    const { progress, texMix } = this.uniforms;
+    const { progress, texMix, plateAspect, texAspect } = this.uniforms;
     // 巡回のたびに value を差し替えるので、ノードの実体を持っておく
     this.texA = texture(this.textures[0]);
     this.texB = texture(this.textures[Math.min(1, this.textures.length - 1)]);
 
     this.material = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide });
 
+    // 板の比率とテクスチャの比率がずれているぶんだけ UV を内側に詰める(object-fit: cover)。
+    // 板は表示中のテクスチャの比率そのものなので、平常時は 1 倍 = 切り取りなし。
+    // 比率の違うプロジェクトへクロスフェードしている間だけ、両端が少し切れる
+    const coverUv = (baseUv, aspect) =>
+      baseUv
+        .sub(0.5)
+        .mul(vec2(min(float(1), plateAspect.div(aspect)), min(float(1), aspect.div(plateAspect))))
+        .add(0.5);
+
     this.material.colorNode = Fn(() => {
       // 裏面は鏡像になるので、回転軸(X)に対応する v を反転して向きを揃える
       const backUv = vec2(uv().x, uv().y.oneMinus());
       const finalUv = frontFacing.select(uv(), backUv);
       // current → next を texMix でクロスフェード。表裏どちらの面でも同じ絵になる
-      return mix(this.texA.sample(finalUv), this.texB.sample(finalUv), texMix);
+      return mix(
+        this.texA.sample(coverUv(finalUv, texAspect.x)),
+        this.texB.sample(coverUv(finalUv, texAspect.y)),
+        texMix,
+      );
     })();
 
     this.material.positionNode = Fn(() => {
       const pos = positionLocal.toVar();
-      // 回転軸を板の手前(z = 高さの半分)に置くと、ページをめくるように奥から手前へ倒れる
-      const center = vec3(0, 0, PLANE_HEIGHT * 0.5);
+      // 回転軸を板の手前(z = FOLD_DEPTH)に置くと、ページをめくるように奥から手前へ倒れる
+      const center = vec3(0, 0, FOLD_DEPTH);
       const offset = uv().y.add(uv().x).mul(0.4).clamp(0, 1);
       // offset で頂点ごとに遅延させた 0..1 のランプ。このままだと両端が折れ線になるので
       // ランプ自体にもイージングをかけて、各頂点の折れ始め/折れ終わりを滑らかにする
@@ -183,7 +214,8 @@ export default class ProjectFold {
       return rotate(pos.sub(center), vec3(smoothProgress.mul(-Math.PI), 0, 0));
     })();
 
-    this.geometry = new THREE.PlaneGeometry(PLANE_WIDTH, PLANE_HEIGHT, 100, 100);
+    // 高さ 1 の単位板。横幅はテクスチャの比率ぶん mesh.scale.x で伸ばす
+    this.geometry = new THREE.PlaneGeometry(1, PLANE_HEIGHT, 100, 100);
     this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.scene.add(this.mesh);
   }
@@ -218,8 +250,30 @@ export default class ProjectFold {
     this.texB.value = this.textures[next];
     this.bgA.value = this.bgTextures[this.current];
     this.bgB.value = this.bgTextures[next];
+    this.uniforms.texAspect.value.set(this.aspects[this.current], this.aspects[next]);
+    // 板の形もテクスチャに合わせて引き直す
+    this.applyPlateScale();
     // テキストは文字数ごとに帯のアスペクトが違うので、タイル数を引き直す
     this.layoutBackground();
+  }
+
+  // 今の板の比率。クロスフェード中は current と next の比率を texMix で補間するので、
+  // 板の形も絵の切り替わりと一緒に次のプロジェクトの比率へ変わっていく
+  plateAspect() {
+    const next = (this.current + 1) % this.aspects.length;
+    const mixValue = this.uniforms.texMix.value;
+
+    return this.aspects[this.current] * (1 - mixValue) + this.aspects[next] * mixValue;
+  }
+
+  // 板の比率と拡大率を入れ直す。板が画面からはみ出さないよう、表示範囲に対して縮める
+  applyPlateScale() {
+    const aspect = this.plateAspect();
+    const scale = plateScale(this.width, this.height, aspect);
+
+    this.uniforms.plateAspect.value = aspect;
+    // 奥行きは高さと同じ倍率にする(折りたたみの回転が比率で歪まないように)
+    this.mesh.scale.set(scale * aspect, scale, scale);
   }
 
   // DOM 側のタイトルを板のクロスフェードと同じタイミングで入れ替える
@@ -252,7 +306,11 @@ export default class ProjectFold {
       duration: FADE_DURATION,
       delay: FADE_HOLD,
       ease: "power2.inOut", // 等速だと切り替わりの頭と尻が目立つ
-      onUpdate: () => this.syncItems(),
+      onUpdate: () => {
+        this.syncItems();
+        // 比率の違うプロジェクトへ移るときは、板の形も一緒に変えていく
+        this.applyPlateScale();
+      },
       onComplete: () => {
         this.current = (this.current + 1) % this.textures.length;
         this.uniforms.texMix.value = 0;
@@ -373,6 +431,16 @@ export default class ProjectFold {
     // 板が画面から外れていると引き渡せないので、位置を揃えてスクロールを止める
     this.lockStage();
 
+    // 背景の流れる文字も一緒に消して、板の動きだけを残す。
+    // 折りたたみと並行で走らせるので待たない(destroy 時は exitTweens として片付く)
+    this.exitTweens.push(
+      gsap.to(this.uniforms.textOpacity, {
+        value: 0,
+        duration: TEXT_FADE_DURATION,
+        ease: "power2.out",
+      }),
+    );
+
     await this.tweenTo(this.uniforms.progress, {
       value: 1,
       duration: FOLD_DURATION,
@@ -411,7 +479,8 @@ export default class ProjectFold {
     const view = this.getViewSize(this.plateDistance());
     const pxPerX = canvas.width / view.width;
     const pxPerY = canvas.height / view.height;
-    const width = PLANE_WIDTH * this.mesh.scale.x * pxPerX;
+    // 板は高さ 1 の単位板なので、mesh.scale がそのままワールド上の幅・高さになる
+    const width = this.mesh.scale.x * pxPerX;
     const height = PLANE_HEIGHT * this.mesh.scale.y * pxPerY;
 
     return {
@@ -422,9 +491,9 @@ export default class ProjectFold {
     };
   }
 
-  // カメラから板までの距離。折り終わった板は頂点シェーダ側で半分の高さぶん手前に出ている
+  // カメラから板までの距離。折り終わった板は頂点シェーダ側で FOLD_DEPTH ぶん手前に出ている
   plateDistance() {
-    return this.camera.position.z - this.mesh.position.z - PLANE_HEIGHT * 0.5 * this.mesh.scale.z;
+    return this.camera.position.z - this.mesh.position.z - FOLD_DEPTH * this.mesh.scale.z;
   }
 
   // 演出用の tween。destroy が割り込んでも待ち側が止まらないよう resolve を控えておく
@@ -457,8 +526,8 @@ export default class ProjectFold {
   }
 
   // canvas を body 直下の固定要素に移す。
-  // Swup が #swup の中身を差し替えても板と背景のテキスト帯はそのまま画面に残り、
-  // マーキーも動き続けたまま、差し替わった先の画像へ繋がる
+  // Swup が #swup の中身を差し替えても板はそのまま画面に残り、
+  // 差し替わった先の画像へ繋がる(背景のテキストはこの時点で消えている)
   detachCanvas() {
     const el = this.renderer.domElement;
     // 今見えている位置のまま固定に切り替える(＝切り離しても見た目は 1px も動かない)
@@ -499,8 +568,7 @@ export default class ProjectFold {
     this.camera.aspect = this.width / this.height;
     this.camera.updateProjectionMatrix();
 
-    // 板が画面からはみ出さないよう、表示範囲に対して縮める
-    this.mesh.scale.setScalar(plateScale(this.camera.aspect));
+    this.applyPlateScale();
 
     this.layoutBackground();
   }

@@ -6,7 +6,9 @@ import { SITE } from "@src/config";
 import Layout from "@layouts/Layout.astro";
 
 // Sanity
-import { getProjects, urlFor, type Project } from "@src/libs/sanity";
+import { toHTML } from "@portabletext/to-html";
+import { getProjects, imageAspectRatio, urlFor, type Project } from "@src/libs/sanity";
+import { DEFAULT_ASPECT } from "@src/js/libs/project-fold/plate-metrics.js";
 
 // 静的ビルドなので、slug ごとのページを一覧からまとめて生成する
 export const getStaticPaths = async () => {
@@ -27,16 +29,38 @@ const { thumbnail } = project;
 
 // メインビジュアルは一覧の板(WebGL)のテクスチャと同じ切り抜き・同じ URL にする。
 // 遷移演出でめくれた板がこの位置へ収まるので、絵がずれないことと、
-// 画像が使い回されて読み込みが起きないことの両方を狙っている
+// 画像が使い回されて読み込みが起きないことの両方を狙っている。
+// 板の比率は画像そのままなので、height は指定しない
+// (width と height を両方渡すと image-url がその比率へ勝手に切り抜く)。
+// index.astro の data-texture と同じ指定にしておくこと
 const MAIN_WIDTH = 1280;
-const MAIN_HEIGHT = 800;
+const heroAspect = imageAspectRatio(thumbnail) ?? DEFAULT_ASPECT;
+const heroHeight = Math.round(MAIN_WIDTH / heroAspect);
+
+// 概要は Portable Text。ビルド時に HTML へ起こして set:html で流し込む
+const outlineHtml = project.outline?.length
+  ? toHTML(project.outline, {
+      components: {
+        marks: {
+          link: ({ children, value }) =>
+            value?.blank
+              ? `<a href="${value.href}" target="_blank" rel="noopener noreferrer">${children}</a>`
+              : `<a href="${value?.href}">${children}</a>`,
+        },
+      },
+    })
+  : null;
 ---
 
 <Layout
   title={`${project.title} | ${SITE.name}`}
-  description={project.subtitle ?? project.title}
+  description={project.title}
 >
   <main class="project">
+    {/* 板と同じ比率をCSSへ渡す。JS が実寸を書き込むまでの目安(下の :global(html) を参照) */}
+    <script is:inline define:vars={{ heroAspect }}>
+      document.documentElement.style.setProperty("--p-project-hero-aspect", heroAspect);
+    </script>
     <div
       class:list={[
         "project__hero",
@@ -49,26 +73,70 @@ const MAIN_HEIGHT = 800;
             <img
               class="js-project-hero"
               crossorigin="anonymous"
-              src={urlFor(thumbnail)
-                .width(MAIN_WIDTH)
-                .height(MAIN_HEIGHT)
-                .fit("crop")
-                .auto("format")
-                .url()}
+              src={urlFor(thumbnail).width(MAIN_WIDTH).auto("format").url()}
               width={MAIN_WIDTH}
-              height={MAIN_HEIGHT}
+              height={heroHeight}
               alt={thumbnail.alt ?? project.title}
             />
           </figure>
         )
       }
-      <header class="project__head">
-        <h1 class="project__title">{project.title}</h1>
-        {project.subtitle && <p class="project__subtitle">{project.subtitle}</p>}
-        {project.award && <p class="project__award">{project.award}</p>}
-      </header>
     </div>
 
+      <div class="project__head-wrapper">
+        <div class="project__head">
+          <h1 class="project__title">{project.title}</h1>
+        </div>
+           <div class="project__head-wrapper">
+            <ul class="project__image-list">
+
+              {project.images && project.images.map((image) => (
+                <li>
+                  <img
+                    src={urlFor(image).width(1600).auto("format").url()}
+                    width={image.dimensions.width}
+                    height={image.dimensions.height}
+                    alt={image.alt ?? project.title}
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
+        <div class="project__body">
+          <p class="project__back">
+            <a target="_blank" rel="noopener noreferrer" href={project.link ?? "#"}>View site</a>
+          </p>
+        </div>
+          <div class="project__detail-wrapper">
+            <section class="project__detail-section">
+              {outlineHtml && (
+                <div class="project__outline-wrapper">
+                  <h3 class="project__outline-title project-detail__ttl">
+                   概要
+                  </h3>
+                  <div class="project__outline" set:html={outlineHtml} />
+                </div>
+              )}
+            </section>
+            <section class="project-member project__detail-section">
+              <h3 class="project-member__ttl project-detail__ttl">
+                Project Member
+              </h3>
+              <div class="project-member__list-wrapper">
+                <ul class="project-member__list">
+                  {project.credits && project.credits.map((credit) => (
+                    <li class="project-member__item">
+                      <span class="project-member__role">{credit.role}</span>
+                      <span class="project-member__name">{credit.name}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+          </div>
+      </div>
     <div class="project__body">
       <p class="project__back">
         <a href={`${SITE.base}/`}>一覧に戻る</a>
@@ -88,18 +156,30 @@ const MAIN_HEIGHT = 800;
    メインビジュアル
    一覧の板(WebGL)がめくり終わった位置・大きさにそのまま重なるよう、
    画面幅 × 100svh のステージの中央に、板と同じ寸法で置く。
-   実寸は project-hero.js が --p-project-hero-w / -h に書き込む
-   （下の値は JS が動くまでの目安。横長画面では実寸と一致する）。
+   実寸は project-hero.js が html の --p-project-hero-w / -h に書き込む。
+   下の値は JS が動くまでの目安で、plate-metrics.js の
+   PLATE_WIDTH(1200px) / PLANE_FIT(0.82) と同じ式。
+   比率(--p-project-hero-aspect)はプロジェクトごとに違うので、上のインラインスクリプトが
+   元画像の比率を html に流し込む（流れてこなければ既定の 1.6 のまま）。
+   ここは html に置く。板とメインビジュアルより内側で宣言すると
+   JS が書いた値を上書きしてしまい、遷移で画像がズレる。
   -------------------------------------------------------------- */
+  :global(html) {
+    --p-project-hero-aspect: 1.6;
+    --p-project-hero-w: min(1200px, 82vw, calc(82svh * var(--p-project-hero-aspect)));
+    --p-project-hero-h: calc(var(--p-project-hero-w) / var(--p-project-hero-aspect));
+  }
+
   .project__hero {
-    --p-project-hero-w: min(114.25svh, 98vw);
-    --p-project-hero-h: calc(var(--p-project-hero-w) / 1.6);
-    /* ステージ上端から測った画像の位置。実寸(ヘッダーのぶんのずれ込み)は JS が入れる */
     --p-project-hero-top: calc((100svh - var(--p-project-hero-h)) / 2);
 
     position: relative;
     height: 100svh;
   }
+.project__head-wrapper{
+width: var(--p-project-hero-w);
+    margin-inline: auto;
+}
 
   .project__thumb {
     position: absolute;
@@ -115,13 +195,6 @@ const MAIN_HEIGHT = 800;
     height: auto;
   }
 
-  /* 画像は板と同じ位置から動かせないので、タイトルはその下端に合わせて置く */
-  .project__head {
-    position: absolute;
-    inset-inline: 0;
-    top: calc(var(--p-project-hero-top) + var(--p-project-hero-h) + 24px);
-    text-align: center;
-  }
 
   /* サムネイルが無い場合は素直に流し込む */
   .project__hero--text {
@@ -137,20 +210,17 @@ const MAIN_HEIGHT = 800;
   .project__title {
     font-family: var(--ff-mincho);
     font-size: 40px;
-    line-height: 1.4;
+    font-weight: 400;
+    color: #fff;
+    line-height: 1;
+    margin-block: 0;
+    margin-bottom: 60px;
   }
 
   .project__subtitle {
     margin-top: 12px;
     font-size: 16px;
   }
-
-  .project__award {
-    margin-top: 12px;
-    font-size: 14px;
-    color: #46fe6e;
-  }
-
   .project__body {
     width: calc(1196 / 1440 * 100%);
     margin-inline: auto;
@@ -159,15 +229,93 @@ const MAIN_HEIGHT = 800;
 
   .project__back {
     margin-top: 60px;
+    text-align: center;
   }
 
   .project__back a {
     display: inline-flex;
-    padding-inline: 24px;
-    padding-block: 12px;
+    padding-inline: 2rem;
+    padding-block: calc(12 / 16 * 1rem);
     font-size: 14px;
-    color: #46fe6e;
-    border: #46fe6e 1px solid;
-    border-radius: 30px;
+    color: #fff;
+    border: #fff 1px solid;
+    line-height: 1.2;
   }
+  .project__head-wrapper li img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .project__image-list li + li {
+    margin-top: 4rem;
+
+  }
+  .project-detail__ttl {
+    margin-bottom: 2.4rem;
+    font-size: 20px;
+    line-height: 1.8;
+    color: #fff;
+  }
+
+  /* 概要はリッチテキスト。Studio 側で許可した要素だけ面倒を見る */
+  .project__outline {
+    font-size: 16px;
+    line-height: 1.8;
+    color: #fff;
+  }
+
+  .project__outline :global(h4) {
+    margin-top: 2rem;
+    font-size: 18px;
+  }
+
+  .project__outline :global(p + p),
+  .project__outline :global(ul),
+  .project__outline :global(ol) {
+    margin-top: 1rem;
+  }
+
+  .project__outline :global(ul) {
+    padding-left: 1.5em;
+    list-style: disc;
+  }
+
+  .project__outline :global(ol) {
+    padding-left: 1.5em;
+    list-style: decimal;
+  }
+
+  .project__outline :global(a) {
+    color: inherit;
+    text-decoration: underline;
+  }
+.project-member{
+  color: #fff;
+}
+.project__detail-section + .project__detail-section{
+  margin-top: 13rem;
+}
+.project__outline{
+  width: min(calc(1000 / 1440 * 100vw), 1000px);
+  margin-left: auto;
+}
+.project-member__list-wrapper{
+    margin-left: auto;
+    width: min(calc(700 / 1440 * 100vw), 700px);
+}
+.project-member__item{
+  display: flex;
+}
+.project-member__role{
+  width: 240px;
+  flex-shrink: 0;
+}
+.project-member__item + .project-member__item{
+  margin-top: 2rem;
+}
+.project__detail-wrapper{
+  margin-top: 240px;
+  padding-top: 240px;
+  border-top: 1px solid #fff;
+}
 </style>

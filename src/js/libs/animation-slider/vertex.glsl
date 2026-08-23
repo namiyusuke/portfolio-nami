@@ -18,7 +18,7 @@ void main() {
   // 中央（y=0）で正面、上下へ離れるほど Y 軸まわりに倒す。
   vec3 pos = position;
   pos.y += progress;
-  pos = rotateY(pos, -cos(smoothstep(-2., 2., pos.y) * PI));
+  pos = rotateY(pos, -cos(smoothstep(-2., 2., pos.y) * PI ));
 
   vec3 worldPosition = (modelMatrix * vec4(pos, 1.0)).xyz;
   vPosition = worldPosition;

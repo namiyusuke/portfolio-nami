@@ -27,6 +27,8 @@ export const initAnimationSlider = async () => {
   const container = section.querySelector(".js-animation-canvas");
   const items = [...section.querySelectorAll(".js-animation-item")];
   const textures = items.map((item) => item.dataset.texture).filter(Boolean);
+  // 動画は任意。未設定の板は静止画（data-texture）のままなので、枚数の判定には使わない
+  const videos = items.map((item) => item.dataset.video ?? null);
   // サムネ未設定の項目が混ざると板とタイトルの枚数がずれるので、その場合は素のリストのまま
   if (!container || items.length === 0 || textures.length !== items.length) {
     return;
@@ -46,7 +48,7 @@ export const initAnimationSlider = async () => {
   }
 
   try {
-    instance = new AnimationSlider({ section, container, items, textures });
+    instance = new AnimationSlider({ section, container, items, textures, videos });
   } catch (error) {
     console.error(error);
     section.classList.remove("is-webgl");

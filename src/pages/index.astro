@@ -13,7 +13,7 @@ import logoPrimary from "@src/assets/images/logo-primary.svg";
 import heroIntroText from "@src/assets/images/hero-intro-text.svg";
 import headingProject from "@src/assets/images/heading-project.svg";
 // Sanity から project 一覧を取得
-import { getProjects, getAnimations, urlFor } from "@src/libs/sanity";
+import { getProjects, getAnimations, imageAspectRatio, urlFor } from "@src/libs/sanity";
 const animations = await getAnimations(10);
 const projects = await getProjects(10);
 console.log(projects);
@@ -26,7 +26,7 @@ console.log(projects);
     class="p-animation js-animation-slider"
     style={`--p-animation-count:${animations.length}`}
   >
-    <h2 class="p-animation__title">Animation</h2>
+    <h2 class="p-animation__title p-project__title">Animation</h2>
     <div class="p-animation__stage">
       <div class="p-animation__canvas js-animation-canvas" aria-hidden="true"></div>
       <ul class="p-animation__list">
@@ -36,6 +36,7 @@ console.log(projects);
             data-texture={animation.thumbnail
               ? urlFor(animation.thumbnail).width(1200).height(600).fit("crop").auto("format").url()
               : undefined}
+            data-video={animation.video ?? undefined}
           >
             <a
               class="p-animation__link"
@@ -59,21 +60,21 @@ console.log(projects);
     </div>
   </section>
   <section class="p-project js-project-fold">
-    <h2 class="p-project__title">Projects</h2>
     <div class="p-project__stage">
+       <h2 class="p-project__title">projects</h2>
       <div class="p-project__canvas js-project-canvas" aria-hidden="true"></div>
       <ul class="p-project__list">
         {projects.map((project) => (
           <li
             class="p-project__list-item js-project-item"
             data-texture={project.thumbnail
-              ? urlFor(project.thumbnail).width(1280).height(800).fit("crop").auto("format").url()
+              ? urlFor(project.thumbnail).width(1280).auto("format").url()
               : undefined}
+            data-aspect={imageAspectRatio(project.thumbnail)}
             data-text={project.title}
           >
             <a class="p-project__link" href={`${SITE.base}/project/${project.slug.current}/`}>
-              <h3 class="p-project__list-item-title">{project.title}</h3>
-              <p class="p-project__list-item-subtitle">{project.subtitle}</p>
+              {/* <h3 class="p-project__list-item-title">{project.title}</h3> */}
               {project.thumbnail && (
                 <img
                   class="p-project__list-item-thumb"
@@ -104,7 +105,7 @@ console.log(projects);
 
   /* スライド枚数ぶん（+ 最後の1枚が抜けるぶん）のスクロール量を確保する */
   .p-animation.is-webgl {
-    height: calc((var(--p-animation-count) + 1) * 100svh);
+    height: calc((var(--p-animation-count) + 1) * 80svh);
   }
 
   .p-animation__title {
@@ -215,8 +216,15 @@ console.log(projects);
     transition: opacity 0.6s ease;
   }
 
-  /* 折りたたみ中はタイトルを引っ込めて板の動きを見せる */
-  .is-webgl.is-folded .p-project__list {
+  /* 折りたたみ中は見出しとプロジェクト名を消して板の動きだけを見せる。
+     背景の流れる文字も sketch.js が同じ長さでフェードさせている
+     (.p-project__title は Animation セクションと共用なので、セクションで絞る) */
+  .p-project.is-webgl .p-project__title {
+    transition: opacity 0.6s ease;
+  }
+
+  .is-webgl.is-folded .p-project__list,
+  .p-project.is-webgl.is-folded .p-project__title {
     opacity: 0;
   }
 
