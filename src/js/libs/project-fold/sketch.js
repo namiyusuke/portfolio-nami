@@ -22,6 +22,7 @@ import {
   positionLocal,
   pow,
   rotate,
+  smoothstep,
   step,
   texture,
   uniform,
@@ -35,6 +36,12 @@ const BG_Z = -2; // 背景テキスト板の奥行き
 const BG_ROW_HEIGHT = 1 / 6;
 const TEXT_SPEED = 0.05;
 const TEXT_OPACITY = 0.35;
+
+// ホバーで板を軽く動かす量。すべて「高さ 1 の単位板」基準
+const HOVER_RADIUS = 0.62; // ポインタの効き幅(これより遠い頂点は動かない)
+const HOVER_LIFT = 0.15; // ポインタの真下が手前へ出る量
+const HOVER_PULL = 0.5; // まわりの頂点をポインタ側へ引き寄せる量
+const HOVER_EASE = 8; // ホバーの追従の速さ(1秒あたり。大きいほど機敏)
 
 const FADE_HOLD = 2.6; // 次のプロジェクトへ切り替わるまでの待ち時間(秒)
 const FADE_DURATION = 1.2; // クロスフェードにかける時間(秒)
@@ -106,6 +113,9 @@ export default class ProjectFold {
     this.exitTweens = [];
     this.exitResolvers = [];
     this.time = 0;
+    // ホバーの狙い値。uniform 側はこれをフレームごとに追いかける
+    this.hoverUv = new THREE.Vector2(0.5, 0.5);
+    this.hoverTarget = 0;
 
     this.uniforms = {
       time: uniform(0),
@@ -116,6 +126,8 @@ export default class ProjectFold {
       textRepeat: uniform(new THREE.Vector2(1, 1)), // 背景テキストの横タイル数(x=current, y=next)
       textSpeed: uniform(TEXT_SPEED),
       textOpacity: uniform(TEXT_OPACITY),
+      hoverUv: uniform(new THREE.Vector2(0.5, 0.5)), // ホバー中の位置(板の UV)
+      hoverStrength: uniform(0), // 0 = 触っていない / 1 = ホバー中
     };
   }
 
@@ -174,7 +186,7 @@ export default class ProjectFold {
   }
 
   addObjects() {
-    const { progress, texMix, plateAspect, texAspect } = this.uniforms;
+    const { progress, texMix, plateAspect, texAspect, hoverUv, hoverStrength } = this.uniforms;
     // 巡回のたびに value を差し替えるので、ノードの実体を持っておく
     this.texA = texture(this.textures[0]);
     this.texB = texture(this.textures[Math.min(1, this.textures.length - 1)]);
@@ -204,6 +216,17 @@ export default class ProjectFold {
 
     this.material.positionNode = Fn(() => {
       const pos = positionLocal.toVar();
+
+      // ホバー: ポインタが重なっているところを軽く手前へ持ち上げ、
+      // まわりの頂点をそこへ引き寄せる(布を指で摘まみ上げるイメージ)。
+      // 板は横に伸びているので、距離だけは比率で補正して効き幅を真円にする。
+      // ずらす量そのものは UV の差をそのまま使う(= 見た目の変位が縦横で揃う)
+      const delta = uv().sub(hoverUv);
+      const dist = delta.mul(vec2(plateAspect.div(PLANE_HEIGHT), 1)).length();
+      // 中心 1 → 効き幅の外 0。二乗して中心付近だけ強く出す
+      const falloff = smoothstep(0, HOVER_RADIUS, dist).oneMinus().pow(2).mul(hoverStrength);
+      pos.addAssign(vec3(delta.mul(falloff.mul(-HOVER_PULL)), falloff.mul(HOVER_LIFT)));
+
       // 回転軸を板の手前(z = FOLD_DEPTH)に置くと、ページをめくるように奥から手前へ倒れる
       const center = vec3(0, 0, FOLD_DEPTH);
       const offset = uv().y.add(uv().x).mul(0.4).clamp(0, 1);
@@ -334,25 +357,58 @@ export default class ProjectFold {
       this.pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     };
 
-    const hitMesh = () => {
+    // 当たった位置の UV。外れていたら null
+    const hitUv = () => {
       this.raycaster.setFromCamera(this.pointer, this.camera);
-      return this.raycaster.intersectObject(this.mesh, false).length > 0;
+      return this.raycaster.intersectObject(this.mesh, false)[0]?.uv ?? null;
     };
 
     this.onPointerMove = (event) => {
       updatePointer(event);
-      el.style.cursor = hitMesh() ? "pointer" : "";
+      const hit = hitUv();
+      el.style.cursor = hit ? "pointer" : "";
+      this.setHover(hit);
     };
 
     this.onPointerDown = (event) => {
       updatePointer(event);
-      if (hitMesh()) {
+      if (hitUv()) {
         this.openCurrent();
       }
     };
 
+    this.onPointerLeave = () => this.setHover(null);
+
     el.addEventListener("pointermove", this.onPointerMove);
     el.addEventListener("pointerdown", this.onPointerDown);
+    el.addEventListener("pointerleave", this.onPointerLeave);
+  }
+
+  // ホバーの狙い値を更新する。hit が null なら板から外れた = 平らへ戻す
+  setHover(hit) {
+    if (!hit || this.leaving) {
+      this.hoverTarget = 0;
+      return;
+    }
+
+    // 触れた瞬間は、前に触っていた場所から膨らみが滑ってくると不自然なので位置を合わせる
+    if (this.uniforms.hoverStrength.value < 0.001) {
+      this.uniforms.hoverUv.value.copy(hit);
+    }
+    this.hoverUv.copy(hit);
+    this.hoverTarget = 1;
+  }
+
+  // 位置も強さもフレームをまたいで追いつかせる(ポインタの飛びをそのまま板に出さない)。
+  // deltaTime に依らず同じ速さで収束するよう、指数で減衰させる
+  updateHover(deltaTime) {
+    const { hoverUv, hoverStrength } = this.uniforms;
+    const t = 1 - Math.exp((-deltaTime / 1000) * HOVER_EASE);
+    // 折りたたみが始まったらホバーは邪魔なので、そのまま平らへ戻す
+    const target = this.leaving ? 0 : this.hoverTarget;
+
+    hoverUv.value.lerp(this.hoverUv, t);
+    hoverStrength.value += (target - hoverStrength.value) * t;
   }
 
   // 表示中の項目（クロスフェードで半分を超えた側が「見えている」板）
@@ -620,6 +676,7 @@ export default class ProjectFold {
       }
     }
 
+    this.updateHover(deltaTime);
     // デモの「1フレーム +0.05」を 60fps 基準の秒速に直した値
     this.time += deltaTime * 0.003;
     this.uniforms.time.value = this.time;
@@ -663,6 +720,7 @@ export default class ProjectFold {
     if (el && this.onPointerMove) {
       el.removeEventListener("pointermove", this.onPointerMove);
       el.removeEventListener("pointerdown", this.onPointerDown);
+      el.removeEventListener("pointerleave", this.onPointerLeave);
     }
 
     for (const tex of this.textures ?? []) {
