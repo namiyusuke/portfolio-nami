@@ -1,6 +1,7 @@
 import "swiper/css";
 import { initAnimationSlider } from "./libs/animation-slider.js";
 import { initHeaderWeather } from "./libs/header-weather.js";
+import { initHeroHolo } from "./libs/hero-holo.js";
 import { initLenis, resetScroll } from "./libs/lenis.js";
 import Observer from "./libs/observer.js";
 import { initProjectFold } from "./libs/project-fold.js";
@@ -47,6 +48,7 @@ registerPageInit(() => {
   // Swup遷移後はDOMが差し替わるため、ここに登録しないと2ページ目以降で動かなくなる。
   initNoteSwiper();
   // 前ページのインスタンス破棄も関数内で行うため、遷移のたびに呼んでよい
+  initHeroHolo();
   initAnimationSlider();
   initProjectFold();
   // 詳細ページのメイン画像を板と同じ矩形に合わせる(遷移演出の着地先になる)
