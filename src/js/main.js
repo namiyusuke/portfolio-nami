@@ -3,6 +3,7 @@ import { initAnimationSlider } from "./libs/animation-slider.js";
 import { initHeaderWeather } from "./libs/header-weather.js";
 import { initHeroHolo } from "./libs/hero-holo.js";
 import { initHeroIntro } from "./libs/hero-intro.js";
+import { initHeroTypography } from "./libs/hero-typography.js";
 import { initLenis, resetScroll } from "./libs/lenis.js";
 import Observer from "./libs/observer.js";
 import { initProjectFold } from "./libs/project-fold.js";
@@ -51,6 +52,8 @@ registerPageInit(() => {
   // 前ページのインスタンス破棄も関数内で行うため、遷移のたびに呼んでよい
   // イントロ(カードが奥へ流れて FV が現れる)は初回表示のときだけ再生される
   initHeroIntro();
+  // FV のタイポグラフィ。初回はイントロ(hero-intro)の終了を待って再生される
+  initHeroTypography();
   initHeroHolo();
   initAnimationSlider();
   initProjectFold();

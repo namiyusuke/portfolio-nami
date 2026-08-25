@@ -715,3 +715,9 @@ body::before {
     width: 170px;
   }
 }
+.p-footer__copyright{
+  text-align: center;
+  font-size: 13px;
+  font-weight: 300;
+  margin-bottom: 24px;
+}

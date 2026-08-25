@@ -30,6 +30,8 @@ export const initHeroIntro = async () => {
   const markDone = () => {
     overlay.classList.add("is-done");
     document.querySelector(".js-hero-holo")?.classList.add("is-intro-done");
+    // FV 側(hero-typography)がイントロ終了を待って自分の演出を始めるための合図
+    document.dispatchEvent(new CustomEvent("hero-intro:done"));
   };
 
   const container = overlay.querySelector(".js-hero-intro-canvas");

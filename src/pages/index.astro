@@ -6,6 +6,9 @@ import { SITE } from "@src/config";
 import Layout from "@layouts/Layout.astro";
 import { getNotePosts } from "../libs/note";
 
+// Components
+import HeroTypography from "@src/components/HeroTypography.astro";
+
 // Assets
 import coverBg from "@src/assets/images/cover-bg.jpg";
 import mvText from "@src/assets/images/mv-text.svg";
@@ -45,6 +48,8 @@ const introTextures = [...projects, ...animations]
     <!-- <div class="p-hero__stage">
       <div class="p-hero__canvas js-hero-canvas" aria-hidden="true"></div>
     </div> -->
+    <!-- FV 本体のタイポグラフィ。イントロ抽選とマグネット演出は hero-typography.js -->
+    <HeroTypography />
   </section>
   <section
     class="p-animation js-animation-slider"
@@ -149,9 +154,11 @@ const introTextures = [...projects, ...animations]
         </ul>
       </div>
     </div>
+<div class="p-footer__copyright">
+  <p>@2026 Yusuke Namikawa</p>
+</div>
   </section>
 </Layout>
-
 <style>
   /* --------------------------------------------------------------
    FV
