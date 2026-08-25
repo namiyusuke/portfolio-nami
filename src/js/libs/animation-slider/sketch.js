@@ -90,7 +90,7 @@ export default class AnimationSlider {
     // 板はすべて原点に置き、縦位置はシェーダの progress で動かす
     this.geometry = new THREE.PlaneGeometry(2, 1, 100, 100);
     this.meshes = textures.map((url, index) => {
-      const material = this.createMaterial(url);
+      const material = this.createMaterial(url, index);
       // 動画つきの項目は、読み込みが済んだ時点で静止画テクスチャと差し替わる
       const video = videos[index] ? this.attachVideo(material, videos[index]) : null;
       const mesh = new THREE.Mesh(this.geometry, material);
@@ -134,7 +134,7 @@ export default class AnimationSlider {
     return video;
   }
 
-  createMaterial(url) {
+  createMaterial(url, index) {
     const texture = this.loader.load(url);
    // texture.colorSpace = THREE.SRGBColorSpace;
 
@@ -146,6 +146,9 @@ export default class AnimationSlider {
       uniforms: {
         progress: { value: 0 },
         uTexture: { value: texture },
+        // 端のゆらぎ用。uIndex は板ごとに揺れの位相をずらすための定数
+        uTime: { value: 0 },
+        uIndex: { value: index },
       },
       vertexShader,
       fragmentShader,
@@ -175,7 +178,8 @@ export default class AnimationSlider {
     return Math.min(Math.max(-rect.top / distance, 0), 1);
   }
 
-  render() {
+  // time は gsap.ticker が渡す経過秒。端のゆらぎはこれで駆動する
+  render(time) {
     if (this.disposed) {
       return;
     }
@@ -198,6 +202,7 @@ export default class AnimationSlider {
       const offset = scroll - item.pos;
       item.mesh.visible = Math.abs(offset) < CULL_DISTANCE;
       item.material.uniforms.progress.value = offset;
+      item.material.uniforms.uTime.value = time;
       // 同時デコードを抑えるため、見えている板の動画だけ再生する
       this.setPlaying(item, item.mesh.visible);
     }

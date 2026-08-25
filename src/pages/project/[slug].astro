@@ -199,7 +199,7 @@ width: var(--p-project-hero-w);
   /* サムネイルが無い場合は素直に流し込む */
   .project__hero--text {
     height: auto;
-    padding-block: 120px;
+    padding-block: clamp(56px, 12vw, 120px);
   }
 
   .project__hero--text .project__head {
@@ -209,12 +209,12 @@ width: var(--p-project-hero-w);
 
   .project__title {
     font-family: var(--ff-mincho);
-    font-size: 40px;
+    font-size: clamp(28px, 6vw, 40px);
     font-weight: 400;
     color: #fff;
-    line-height: 1;
+    line-height: 1.2;
     margin-block: 0;
-    margin-bottom: 60px;
+    margin-bottom: clamp(32px, 6vw, 60px);
   }
 
   .project__subtitle {
@@ -224,11 +224,11 @@ width: var(--p-project-hero-w);
   .project__body {
     width: calc(1196 / 1440 * 100%);
     margin-inline: auto;
-    padding-block: 120px;
+    padding-block: clamp(56px, 12vw, 120px);
   }
 
   .project__back {
-    margin-top: 60px;
+    margin-top: clamp(32px, 6vw, 60px);
     text-align: center;
   }
 
@@ -247,12 +247,11 @@ width: var(--p-project-hero-w);
     height: auto;
   }
   .project__image-list li + li {
-    margin-top: 4rem;
-
+    margin-top: clamp(2rem, 5vw, 4rem);
   }
   .project-detail__ttl {
-    margin-bottom: 2.4rem;
-    font-size: 20px;
+    margin-bottom: clamp(1.2rem, 4vw, 2.4rem);
+    font-size: clamp(18px, 4.5vw, 20px);
     line-height: 1.8;
     color: #fff;
   }
@@ -293,29 +292,44 @@ width: var(--p-project-hero-w);
   color: #fff;
 }
 .project__detail-section + .project__detail-section{
-  margin-top: 13rem;
+  margin-top: clamp(5rem, 13vw, 13rem);
 }
-.project__outline{
-  width: min(calc(1000 / 1440 * 100vw), 1000px);
-  margin-left: auto;
-}
+
+/* SP は本文カラムを目一杯使い、md 以上で右寄せの狭いカラムへ戻す */
+.project__outline,
 .project-member__list-wrapper{
-    margin-left: auto;
-    width: min(calc(700 / 1440 * 100vw), 700px);
+  width: 100%;
+  margin-left: auto;
 }
 .project-member__item{
   display: flex;
-}
-.project-member__role{
-  width: 240px;
-  flex-shrink: 0;
+  /* SP は 役割 / 名前 を縦積みにする(横並びだと名前が潰れる) */
+  flex-direction: column;
+  gap: 0.25rem;
 }
 .project-member__item + .project-member__item{
-  margin-top: 2rem;
+  margin-top: clamp(1.2rem, 3vw, 2rem);
 }
 .project__detail-wrapper{
-  margin-top: 240px;
-  padding-top: 240px;
+  margin-top: clamp(96px, 17vw, 240px);
+  padding-top: clamp(96px, 17vw, 240px);
   border-top: 1px solid #fff;
+}
+
+@media (--md) {
+  .project__outline{
+    width: min(calc(1000 / 1440 * 100vw), 1000px);
+  }
+  .project-member__list-wrapper{
+    width: min(calc(700 / 1440 * 100vw), 700px);
+  }
+  .project-member__item{
+    flex-direction: row;
+    gap: 0;
+  }
+  .project-member__role{
+    width: 240px;
+    flex-shrink: 0;
+  }
 }
 </style>

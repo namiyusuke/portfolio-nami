@@ -17,6 +17,15 @@ import { getProjects, getAnimations, imageAspectRatio, urlFor } from "@src/libs/
 const animations = await getAnimations(10);
 const projects = await getProjects(10);
 console.log(projects);
+
+// イントロで奥へ流すカードのテクスチャ。project / animation のサムネから最大10枚。
+// 板(1.5 : 2.0)と同じ縦長比で切り出しておくと絵柄が歪まない
+const introTextures = [...projects, ...animations]
+  .flatMap((item) => (item.thumbnail ? [item.thumbnail] : []))
+  .slice(0, 10)
+  .map((thumbnail) =>
+    urlFor(thumbnail).width(768).height(1024).fit("crop").auto("format").url()
+  );
 // note の RSS から記事(タイトル・サムネイル・URL)を取得
 // const notePosts = await getNotePosts(10);
 ---
@@ -24,9 +33,18 @@ console.log(projects);
 <Layout title={`ページタイトル | ${SITE.name}`} description="ページの紹介文">
 
   <section class="p-hero js-hero-holo">
-    <div class="p-hero__stage">
-      <div class="p-hero__canvas js-hero-canvas" aria-hidden="true"></div>
+    <!-- 初回表示だけ再生するイントロ。カードが螺旋を描いて奥へ流れたあと
+         フェードアウトし、背後の FV が現れる -->
+    <div
+      class="p-hero__intro js-hero-intro"
+      data-textures={JSON.stringify(introTextures)}
+      aria-hidden="true"
+    >
+      <div class="p-hero__intro-canvas js-hero-intro-canvas"></div>
     </div>
+    <!-- <div class="p-hero__stage">
+      <div class="p-hero__canvas js-hero-canvas" aria-hidden="true"></div>
+    </div> -->
   </section>
   <section
     class="p-animation js-animation-slider"
@@ -97,6 +115,41 @@ console.log(projects);
       </ul>
     </div>
   </section>
+  <section class="p-about">
+    <h2 class="p-about__title p-project__title">About</h2>
+    <div class="p-about__content">
+      <div class="p-about__content-inner">
+        <h3 class="p-about__name">
+          <span class="p-about__name-en">Yusuke Namikawa</span>
+          <span class="p-about__name-ja">並河祐輔</span>
+        </h3>
+        <p class="p-about__profile">
+          大学卒業後、社会福祉士として経験を詰んだ後
+          2021年10月より制作会社にてwebエンジニアになる.
+          得意なこと・できること：jsやcssを用いたアニメーション、インタラクション、マークアップ
+        </p>
+      </div>
+      <div class="footer-sns">
+        <ul class="footer-sns-list">
+          <li>
+            <a href="https://twitter.com/namikawa_yusuke" target="_blank" rel="noopener noreferrer">
+              X
+            </a>
+          </li>
+          <li>
+            <a href="https://www.instagram.com/namikawa_yusuke/" target="_blank" rel="noopener noreferrer">
+              Codepen
+            </a>
+          </li>
+          <li>
+            <a href="https://www.linkedin.com/in/namikawa-yusuke/" target="_blank" rel="noopener noreferrer">
+              Contact
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
 </Layout>
 
 <style>
@@ -110,6 +163,39 @@ console.log(projects);
     position: relative;
     inset: 0;
     height: 100svh;
+  }
+
+  /* --------------------------------------------------------------
+   イントロ(カードが螺旋を描いて奥へ流れる)
+   既定は非表示。WebGL が使えて初回表示のときだけ JS が .is-webgl を付けて再生し、
+   終わったら .is-done でフェードアウトして背後の FV を見せる。
+  -------------------------------------------------------------- */
+  .p-hero__intro {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    /* 再生中もスクロールやクリックは奪わない */
+    pointer-events: none;
+  }
+
+  .p-hero__intro.is-webgl {
+    display: block;
+  }
+
+  .p-hero__intro.is-done {
+    opacity: 0;
+    transition: opacity 0.8s var(--ease-out-cubic);
+  }
+
+  .p-hero__intro-canvas {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* renderer が差し込む canvas はスコープ外なので :global で拾う */
+  .p-hero__intro-canvas :global(canvas) {
+    display: block;
   }
 
   /* 全身 → 上半身へ寄せるためのスクロール区間。
@@ -206,6 +292,9 @@ console.log(projects);
   /* 全項目を同じセルに重ね、GSAP が rotationX で円筒状に回す */
   .is-webgl .p-animation__list-item {
     grid-area: 1 / 1;
+    /* place-items: center は max-content 幅になるので、
+       長いタイトルが画面外へ出ないよう上限を切っておく */
+    max-width: 100%;
     backface-visibility: hidden;
   }
 
@@ -213,12 +302,54 @@ console.log(projects);
     color: #fff;
     font-family: var(--ff-mincho);
     font-size: clamp(24px, calc(48 / 1440 * 100vw), 48px);
-    white-space: nowrap;
+    text-align: center;
+    /* SP は 1行に収まらないので折り返す(md 以上は元どおり nowrap) */
+    padding-inline: var(--offset-inline);
+    text-wrap: balance;
+  }
+
+  @media (--md) {
+    .is-webgl .p-animation__list-item-title {
+      padding-inline: 0;
+      white-space: nowrap;
+    }
   }
 
   /* サムネは板のテクスチャとして描くので DOM 側は隠す */
   .is-webgl .p-animation__list-item-thumb {
     display: none;
+  }
+
+  /* --------------------------------------------------------------
+   WebGL 非対応 / prefers-reduced-motion 時の素のリスト表示。
+   SP はここに落ちる端末もあるので、最低限読める体裁を持たせておく。
+  -------------------------------------------------------------- */
+  .p-animation:not(.is-webgl) .p-animation__list,
+  .p-project:not(.is-webgl) .p-project__list {
+    display: grid;
+    gap: clamp(32px, 6vw, 64px);
+    margin-top: clamp(32px, 6vw, 64px);
+    padding-inline: var(--offset-inline);
+  }
+
+  @media (--md) {
+    .p-animation:not(.is-webgl) .p-animation__list,
+    .p-project:not(.is-webgl) .p-project__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .p-animation:not(.is-webgl) .p-animation__list-item-title {
+    margin-bottom: 12px;
+    color: #fff;
+    font-family: var(--ff-mincho);
+    font-size: clamp(18px, 4.5vw, 24px);
+  }
+
+  .p-animation:not(.is-webgl) .p-animation__list-item-thumb,
+  .p-project:not(.is-webgl) .p-project__list-item-thumb {
+    width: 100%;
+    height: auto;
   }
 
   /* --------------------------------------------------------------
@@ -288,6 +419,7 @@ console.log(projects);
 
   .is-webgl .p-project__list-item {
     grid-area: 1 / 1;
+    max-width: 100%;
     text-align: center;
   }
 
@@ -301,7 +433,15 @@ console.log(projects);
   .is-webgl .p-project__list-item-title {
     font-family: var(--ff-mincho);
     font-size: clamp(24px, calc(48 / 1440 * 100vw), 48px);
-    white-space: nowrap;
+    padding-inline: var(--offset-inline);
+    text-wrap: balance;
+  }
+
+  @media (--md) {
+    .is-webgl .p-project__list-item-title {
+      padding-inline: 0;
+      white-space: nowrap;
+    }
   }
 
   .is-webgl .p-project__list-item-subtitle {
@@ -314,14 +454,25 @@ console.log(projects);
     display: none;
   }
 
-  .footer-sns{
-    margin-top: 20px;
+  .footer-sns {
+    margin-top: clamp(48px, calc(100 / 1440 * 100vw), 100px);
+    margin-bottom: clamp(120px, calc(280 / 1440 * 100vw), 280px);
   }
-.footer-sns-list{
-  display: flex;
 
-  column-gap: 20px;
-}
+  /* 横並びにするのはボタンを持つリスト側。SP は縦積みで中央に寄せる */
+  .footer-sns-list {
+    display: grid;
+    gap: 16px;
+    justify-content: center;
+  }
+
+  @media (--md) {
+    .footer-sns-list {
+      grid-auto-flow: column;
+      justify-content: start;
+      column-gap: 20px;
+    }
+  }
 .footer-logoText{
   max-width: 128px;
   margin-inline: auto;

@@ -556,6 +556,13 @@ html.lenis body {
 // ====================================================== */
 body {
   background-color: var(--cl-bg);
+
+  /*
+  * SP で 100vw 指定やキャンバスがスクロールバー分はみ出しても横スクロールを出さない。
+  * hidden と違い clip はスクロールコンテナを作らないので、
+  * Animation セクションの position: sticky はそのまま効く。
+  */
+  overflow-x: clip;
 }
 
 body::before {
@@ -598,6 +605,8 @@ body::before {
 }
 
 :root {
+  /* ページ左右の共通余白。SP では 20px、1440px で 46px まで広がる */
+  --offset-inline: clamp(20px, calc(46 / 1440 * 100vw), 46px);
   --cl-bg: #1e1e1e;
   --cl-bg-gray: #282828;
   --cl-text: #a0a0a0;
@@ -646,9 +655,63 @@ body::before {
 .p-project__title{
   font-family: var(--ff-mincho);
   font-weight: 400;
-  font-size: min(calc(128 / 1440 * 100vw), 128px);
-  padding-inline: 46px;
+  /* 1440px で 128px。SP は 100vw 追従だと小さくなりすぎるので 48px で下げ止める */
+  font-size: clamp(48px, calc(128 / 1440 * 100vw), 128px);
+  line-height: 1.2;
+  padding-inline: var(--offset-inline);
 }
 .project__outline p{
   font-weight: 400;
+}
+.p-about{
+  color: #fff;
+}
+.p-about__title{
+  /* 1440px で 133px。SP はそのままだと空きすぎるので 56px で止める */
+  margin-bottom: clamp(56px, calc(133 / 1440 * 100vw), 133px);
+}
+.p-about__content{
+  display: flex;
+  flex-direction: column;
+  max-width: 558px;
+  margin-inline: auto;
+  /* max-width より画面が狭いときに文字が端に貼り付かないように */
+  padding-inline: var(--offset-inline);
+}
+.p-about__content-inner{
+  max-width: 440px;
+  margin-inline: auto;
+}
+.p-about__name{
+  display: flex;
+  /* SP では英字名と和名が1行に収まらないので折り返す */
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: flex-end;
+  margin-bottom: 40px;
+}
+.p-about__name-en{
+  font-family: var(--ff-gothic);
+  font-weight: 400;
+  font-size: clamp(1.5rem, 6vw, 2rem);
+  line-height: 1;
+}
+.p-about__name-ja{
+  font-weight: 400;
+  font-size: 1rem;
+}
+.footer-sns-list li a{
+  /* 画面が狭いときは 170px を上限に縮む */
+  width: min(170px, 100%);
+  min-height: 45px;
+  font-weight: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #fff;
+}
+@media (min-width: 768px) {
+  .footer-sns-list li a{
+    width: 170px;
+  }
 }
