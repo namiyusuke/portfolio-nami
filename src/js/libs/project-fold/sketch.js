@@ -1,27 +1,17 @@
 import gsap from "gsap";
-import * as THREE from "three/webgpu";
-import { getLenis } from "../lenis.js";
-import { clearPageExit, registerPageExit } from "../page-exit.js";
-import { handoffProjectHero, HERO_HANDOFF_CLASS } from "../project-hero.js";
-import { getSwup } from "../swup.js";
-// 板のサイズ・カメラ設定は詳細ページの画像配置と共有する(遷移で画像を動かさないため)
 import {
-  CAMERA_FOV,
-  CAMERA_Z,
-  DEFAULT_ASPECT,
-  FOLD_DEPTH,
-  PLANE_HEIGHT,
-  plateScale,
-} from "./plate-metrics.js";
-import {
+  cos,
+  cross,
+  dot,
   float,
   Fn,
   frontFacing,
-  min,
   mix,
+  normalize,
   positionLocal,
   pow,
   rotate,
+  sin,
   smoothstep,
   step,
   texture,
@@ -30,6 +20,14 @@ import {
   vec2,
   vec3,
 } from "three/tsl";
+import * as THREE from "three/webgpu";
+
+import { getLenis } from "../lenis.js";
+import { clearPageExit, registerPageExit } from "../page-exit.js";
+import { handoffProjectHero, HERO_HANDOFF_CLASS } from "../project-hero.js";
+import { getSwup } from "../swup.js";
+// 板のサイズ・カメラ設定は詳細ページの画像配置と共有する(遷移で画像を動かさないため)
+import { CAMERA_FOV, CAMERA_Z, DEFAULT_ASPECT, FOLD_DEPTH, PLANE_HEIGHT, plateScale } from "./plate-metrics.js";
 
 const BG_Z = -2; // 背景テキスト板の奥行き
 // マーキーは上下中央の1行だけ。行の高さは表示範囲の高さに対する比率で決める
@@ -43,8 +41,18 @@ const HOVER_LIFT = 0.15; // ポインタの真下が手前へ出る量
 const HOVER_PULL = 0.5; // まわりの頂点をポインタ側へ引き寄せる量
 const HOVER_EASE = 8; // ホバーの追従の速さ(1秒あたり。大きいほど機敏)
 
-const FADE_HOLD = 2.6; // 次のプロジェクトへ切り替わるまでの待ち時間(秒)
-const FADE_DURATION = 1.2; // クロスフェードにかける時間(秒)
+const SWAP_HOLD = 2.6; // 次のプロジェクトへ切り替わるまでの待ち時間(秒)
+const SWAP_FADE = 1.2; // 背景テキストと DOM タイトルのクロスフェードにかける時間(秒)
+const EXIT_DURATION = 1.2; // 今の板がめくれを巻き上げながら真上へ抜けていく時間(秒)
+const ENTER_DURATION = 1.8; // 次の板が真下から昇ってくる時間(秒)。デモの1サイクルは3秒
+const ENTER_DELAY = 0.2; // 退場が始まってから次の板が入り始めるまでの間(秒)
+
+// 入退場のめくれ(hero-intro の vertex.glsl の自動再生と同じ動き)。
+// デモは p を等速で回し、uFlip = p / uAngle = p×0.25 / uBend = sin(pπ)×0.35 で駆動している
+const FLIP_AXIS = [1.6, 1.0, 0.5]; // めくれ本体の斜め回転軸
+const FLIP_SPIN = Math.PI; // スピン量。uAngle×π×4 に uAngle = p×0.25 を入れた値(約半回転)
+const FLIP_BEND = 0.11; // 湾曲の強さ。デモの uBend 最大 0.35 を板の高さ(3.2 → 1)に換算
+const OFFSCREEN_MARGIN = 1.1; // 板を画面外に置くときの余裕(1 = 画面端ぴったり)
 const FOLD_DURATION = 2.4; // 折りたたみ / 展開にかける時間(秒)
 
 // 遷移演出（折りたたみの続き）
@@ -56,8 +64,7 @@ const LAND_FALLBACK = 4000; // 入場側が呼ばれなかったときに板を�
 
 // tsl-easings を足さずに済むよう、使う2本だけ TSL で持つ
 const easeOutQuad = (x) => x.oneMinus().pow(2).oneMinus();
-const easeInOutCubic = (x) =>
-  mix(x.pow(3).mul(4), float(1).sub(x.mul(-2).add(2).pow(3).div(2)), step(0.5, x));
+const easeInOutCubic = (x) => mix(x.pow(3).mul(4), float(1).sub(x.mul(-2).add(2).pow(3).div(2)), step(0.5, x));
 
 // テキストを横一列に敷き詰めた帯を作る。
 // キャンバス幅を「1文字送り(step)の整数倍」にしておくと、RepeatWrapping で
@@ -87,8 +94,10 @@ const makeTextTexture = (text, { height = 256, fontSize = 170, gap = 140 } = {})
 };
 
 // Projects セクションの WebGPU ステージ。
-// 板は常に1枚で、テクスチャ(=プロジェクト)を一定間隔でクロスフェードしながら
-// 巡回する。板(またはタイトルのリンク)をクリックすると折りたたみが始まり、
+// プロジェクトは一定間隔で入れ替わりながら巡回する。今の板が hero-intro と同じ
+// めくれ(スピン + 斜め軸のフリップ + 垂れ下がり)を巻き上げながら真上へ抜けていき、
+// 次の板が真下から同じめくれをほどきながら中央へ昇ってくる。
+// 板(またはタイトルのリンク)をクリックすると折りたたみが始まり、
 // めくれた板を画面に残したまま中身が詳細ページに差し替わる → その板が
 // 詳細ページのメイン画像の位置へ収まって実物と入れ替わる、という流れで遷移する。
 export default class ProjectFold {
@@ -106,6 +115,8 @@ export default class ProjectFold {
     this.release = release;
     this.disposed = false;
     this.current = 0;
+    // 板に今貼られているテクスチャの番号。入れ替え中だけ current より先に進む
+    this.plateIndex = 0;
     this.folded = false;
     this.leaving = false;
     // canvas を body 直下へ移して、遷移をまたいで見せている間 true
@@ -120,9 +131,10 @@ export default class ProjectFold {
     this.uniforms = {
       time: uniform(0),
       progress: uniform(0), // 0 = 平ら / 1 = 折りたたみ完了
-      texMix: uniform(0), // 0 = current / 1 = next
-      plateAspect: uniform(DEFAULT_ASPECT), // 今の板の比率(クロスフェード中は current と next の中間)
-      texAspect: uniform(new THREE.Vector2(DEFAULT_ASPECT, DEFAULT_ASPECT)), // 各テクスチャの比率(x=current, y=next)
+      texMix: uniform(0), // 0 = current / 1 = next(背景テキストと DOM タイトルの入れ替えに使う)
+      plateAspect: uniform(DEFAULT_ASPECT), // 今の板の比率
+      leave: uniform(0), // 退場のめくれの進行度(0 = 中央で平ら / 1 = めくれて抜けた)
+      enter: uniform(0), // 入場のめくれの進行度(1 = めくれて回っている / 0 = 着地)
       textRepeat: uniform(new THREE.Vector2(1, 1)), // 背景テキストの横タイル数(x=current, y=next)
       textSpeed: uniform(TEXT_SPEED),
       textOpacity: uniform(TEXT_OPACITY),
@@ -174,7 +186,7 @@ export default class ProjectFold {
     this.onResize = this.resize.bind(this);
     window.addEventListener("resize", this.onResize);
     this.setupPointer();
-    this.startCycle();
+    this.scheduleSwap();
 
     // 詳細ページへの遷移は、この板の折りたたみを退場演出として使う
     this.pageExit = this.handlePageExit.bind(this);
@@ -186,33 +198,43 @@ export default class ProjectFold {
   }
 
   addObjects() {
-    const { progress, texMix, plateAspect, texAspect, hoverUv, hoverStrength } = this.uniforms;
+    const { progress, plateAspect, hoverUv, hoverStrength, leave, enter } = this.uniforms;
     // 巡回のたびに value を差し替えるので、ノードの実体を持っておく
-    this.texA = texture(this.textures[0]);
-    this.texB = texture(this.textures[Math.min(1, this.textures.length - 1)]);
+    this.plateTex = texture(this.textures[0]);
+    this.exitTex = texture(this.textures[0]);
 
+    // 裏面は鏡像になるので、回転軸(X)に対応する v を反転して向きを揃える
+    const faceUv = () => frontFacing.select(uv(), vec2(uv().x, uv().y.oneMinus()));
+
+    // 入退場のめくれ(hero-intro の vertex.glsl の移植)。t = 0 で平ら、1 でめくれ切った状態。
+    // 任意軸の回転はロドリゲスの回転公式: v' = v c + (k×v) s + k (k·v)(1 - c)。
+    // 元の GLSL は行列の並びの都合で逆回転になっているので、角度を負にして向きを揃える
+    const rotateAround = (p, axis, angle) => {
+      const k = normalize(axis);
+      const s = sin(angle.negate());
+      const c = cos(angle.negate());
+      return p
+        .mul(c)
+        .add(cross(k, p).mul(s))
+        .add(k.mul(dot(k, p).mul(c.oneMinus())));
+    };
+    const flipDeform = (pos, t) => {
+      // 両方の edge に uv.x を混ぜることで、左端から右端へ時間差でめくれる
+      const flipProgress = smoothstep(uv().x.mul(0.4), uv().x.mul(0.2).add(0.8), t);
+      const spin = t.mul(FLIP_SPIN);
+      // Z 軸まわり = 画面内でのスピン
+      pos.assign(rotateAround(pos, vec3(0, 0, 1), spin));
+      // 斜め軸まわり = めくれ本体(最大 180°) + 上と同じスピン量を合成
+      pos.assign(rotateAround(pos, vec3(...FLIP_AXIS), flipProgress.mul(Math.PI).add(spin)));
+      // 上辺 0 → 下辺 -1 の垂れ下がり。回転「後」に足すので、板の向きに関係なく奥行き方向へ反る。
+      // 強さはデモと同じ sin(t×π) の釣鐘型 = めくれの途中で最も反り、両端では平ら
+      const sag = uv().y.negate().mul(uv().y.sub(2)).sub(1); // quadraticOut(uv.y) - 1
+      pos.z.addAssign(sag.mul(sin(t.mul(Math.PI)).mul(FLIP_BEND)).mul(6));
+    };
+
+    // 板の形はテクスチャの比率そのものなので、UV はそのまま貼れば切り取りなしで収まる
     this.material = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide });
-
-    // 板の比率とテクスチャの比率がずれているぶんだけ UV を内側に詰める(object-fit: cover)。
-    // 板は表示中のテクスチャの比率そのものなので、平常時は 1 倍 = 切り取りなし。
-    // 比率の違うプロジェクトへクロスフェードしている間だけ、両端が少し切れる
-    const coverUv = (baseUv, aspect) =>
-      baseUv
-        .sub(0.5)
-        .mul(vec2(min(float(1), plateAspect.div(aspect)), min(float(1), aspect.div(plateAspect))))
-        .add(0.5);
-
-    this.material.colorNode = Fn(() => {
-      // 裏面は鏡像になるので、回転軸(X)に対応する v を反転して向きを揃える
-      const backUv = vec2(uv().x, uv().y.oneMinus());
-      const finalUv = frontFacing.select(uv(), backUv);
-      // current → next を texMix でクロスフェード。表裏どちらの面でも同じ絵になる
-      return mix(
-        this.texA.sample(coverUv(finalUv, texAspect.x)),
-        this.texB.sample(coverUv(finalUv, texAspect.y)),
-        texMix,
-      );
-    })();
+    this.material.colorNode = Fn(() => this.plateTex.sample(faceUv()))();
 
     this.material.positionNode = Fn(() => {
       const pos = positionLocal.toVar();
@@ -227,12 +249,18 @@ export default class ProjectFold {
       const falloff = smoothstep(0, HOVER_RADIUS, dist).oneMinus().pow(2).mul(hoverStrength);
       pos.addAssign(vec3(delta.mul(falloff.mul(-HOVER_PULL)), falloff.mul(HOVER_LIFT)));
 
+      // 入場: enter が 1 → 0 でスピンとめくれがほどけて平らに着地する
+      flipDeform(pos, enter);
+
       // 回転軸を板の手前(z = FOLD_DEPTH)に置くと、ページをめくるように奥から手前へ倒れる
       const center = vec3(0, 0, FOLD_DEPTH);
       const offset = uv().y.add(uv().x).mul(0.4).clamp(0, 1);
       // offset で頂点ごとに遅延させた 0..1 のランプ。このままだと両端が折れ線になるので
       // ランプ自体にもイージングをかけて、各頂点の折れ始め/折れ終わりを滑らかにする
-      const ramp = easeOutQuad(progress).sub(pow(offset.mul(0.4), 2)).div(0.6).clamp(0, 1);
+      const ramp = easeOutQuad(progress)
+        .sub(pow(offset.mul(0.4), 2))
+        .div(0.6)
+        .clamp(0, 1);
       const smoothProgress = easeInOutCubic(ramp);
       return rotate(pos.sub(center), vec3(smoothProgress.mul(-Math.PI), 0, 0));
     })();
@@ -241,6 +269,21 @@ export default class ProjectFold {
     this.geometry = new THREE.PlaneGeometry(1, PLANE_HEIGHT, 100, 100);
     this.mesh = new THREE.Mesh(this.geometry, this.material);
     this.scene.add(this.mesh);
+
+    // 退場専用の板。入れ替えのときだけ現れて、前の絵を持ったまま真上へ抜けていく
+    this.exitMaterial = new THREE.MeshBasicNodeMaterial({ side: THREE.DoubleSide });
+    this.exitMaterial.colorNode = Fn(() => this.exitTex.sample(faceUv()))();
+    this.exitMaterial.positionNode = Fn(() => {
+      const pos = positionLocal.toVar();
+      // 入場と同じめくれ。leave が 0 → 1 でめくれを巻き上げながら出ていく
+      flipDeform(pos, leave);
+      // 本体の板は折りたたみの回転軸の都合で常に FOLD_DEPTH ぶん奥に描かれている
+      // (positionNode 末尾の pos.sub(center))ので、同じだけ奥へ置いて大きさを揃える
+      return pos.sub(vec3(0, 0, FOLD_DEPTH));
+    })();
+    this.exitMesh = new THREE.Mesh(this.geometry, this.exitMaterial);
+    this.exitMesh.visible = false;
+    this.scene.add(this.exitMesh);
   }
 
   addBackground() {
@@ -266,32 +309,22 @@ export default class ProjectFold {
     this.scene.add(this.bg);
   }
 
-  // 表示中(current)と次(next)のテクスチャをノードへ流し込む
+  // 表示中(current)のテクスチャを板へ、current と次を背景テキストへ流し込む
   applyTextures() {
     const next = (this.current + 1) % this.textures.length;
-    this.texA.value = this.textures[this.current];
-    this.texB.value = this.textures[next];
+    this.plateIndex = this.current;
+    this.plateTex.value = this.textures[this.current];
     this.bgA.value = this.bgTextures[this.current];
     this.bgB.value = this.bgTextures[next];
-    this.uniforms.texAspect.value.set(this.aspects[this.current], this.aspects[next]);
     // 板の形もテクスチャに合わせて引き直す
     this.applyPlateScale();
     // テキストは文字数ごとに帯のアスペクトが違うので、タイル数を引き直す
     this.layoutBackground();
   }
 
-  // 今の板の比率。クロスフェード中は current と next の比率を texMix で補間するので、
-  // 板の形も絵の切り替わりと一緒に次のプロジェクトの比率へ変わっていく
-  plateAspect() {
-    const next = (this.current + 1) % this.aspects.length;
-    const mixValue = this.uniforms.texMix.value;
-
-    return this.aspects[this.current] * (1 - mixValue) + this.aspects[next] * mixValue;
-  }
-
   // 板の比率と拡大率を入れ直す。板が画面からはみ出さないよう、表示範囲に対して縮める
   applyPlateScale() {
-    const aspect = this.plateAspect();
+    const aspect = this.aspects[this.plateIndex] ?? DEFAULT_ASPECT;
     const scale = plateScale(this.width, this.height, aspect);
 
     this.uniforms.plateAspect.value = aspect;
@@ -318,29 +351,86 @@ export default class ProjectFold {
     });
   }
 
-  // texMix を 0 → 1 で送っては current を進める、を繰り返してプロジェクトを巡回する
-  startCycle() {
+  // 「待つ → 入れ替える」を繰り返してプロジェクトを巡回する。
+  // this.cycle が常に今動いている方(待ちの delayedCall か入れ替えの timeline)を指すので、
+  // 画面外での pause / resume や destroy の kill はどの瞬間でも効く
+  scheduleSwap() {
     if (this.textures.length < 2) {
       return;
     }
 
-    this.cycle = gsap.timeline({ repeat: -1 }).to(this.uniforms.texMix, {
-      value: 1,
-      duration: FADE_DURATION,
-      delay: FADE_HOLD,
-      ease: "power2.inOut", // 等速だと切り替わりの頭と尻が目立つ
-      onUpdate: () => {
-        this.syncItems();
-        // 比率の違うプロジェクトへ移るときは、板の形も一緒に変えていく
-        this.applyPlateScale();
-      },
+    this.cycle = gsap.delayedCall(SWAP_HOLD, () => this.playSwap());
+  }
+
+  // 入れ替え本体。今の板が退場用の板としてめくれを巻き上げながら真上へ抜けていき、
+  // 次の絵に差し替えた本体の板が真下から同じめくれをほどきながら中央へ昇ってくる
+  playSwap() {
+    const next = (this.current + 1) % this.textures.length;
+    const view = this.getViewSize(this.camera.position.z);
+
+    // 退場する板: 今の見た目(絵・大きさ)をそのまま引き継いで中央に置く
+    this.exitTex.value = this.textures[this.current];
+    this.exitMesh.scale.copy(this.mesh.scale);
+    this.exitMesh.position.set(0, 0, 0);
+    this.exitMesh.rotation.set(0, 0, 0);
+    this.exitMesh.visible = true;
+
+    // 退場する板が画面外に出るまでの距離。めくれで回転するぶん対角半径で取る
+    const exitHalfDiagonal = Math.hypot(this.exitMesh.scale.x, this.exitMesh.scale.y) / 2;
+    this.uniforms.leave.value = 0;
+
+    // 入場する板: 次のテクスチャに差し替えて真下の画面外へ
+    this.plateIndex = next;
+    this.plateTex.value = this.textures[next];
+    this.applyPlateScale();
+    const halfDiagonal = Math.hypot(this.mesh.scale.x, this.mesh.scale.y) / 2;
+    this.mesh.position.set(0, -(view.height / 2 + halfDiagonal) * OFFSCREEN_MARGIN, 0);
+    this.uniforms.enter.value = 1; // めくれて回った状態から入り、着地でほどける
+
+    const tl = gsap.timeline({
       onComplete: () => {
-        this.current = (this.current + 1) % this.textures.length;
+        this.exitMesh.visible = false;
+        this.uniforms.leave.value = 0;
+        this.uniforms.enter.value = 0;
+        this.current = next;
         this.uniforms.texMix.value = 0;
         this.applyTextures();
         this.syncItems();
+        this.scheduleSwap();
       },
     });
+
+    // 背景テキストと DOM タイトルは今まで通りクロスフェードで入れ替える
+    tl.to(
+      this.uniforms.texMix,
+      {
+        value: 1,
+        duration: SWAP_FADE,
+        ease: "power2.inOut",
+        onUpdate: () => this.syncItems(),
+      },
+      0,
+    );
+
+    // 退場: 入場と同じめくれを巻き上げながら、真上へ抜けていく
+    tl.to(this.uniforms.leave, { value: 1, duration: EXIT_DURATION, ease: "none" }, 0);
+    tl.to(
+      this.exitMesh.position,
+      {
+        y: (view.height / 2 + exitHalfDiagonal) * OFFSCREEN_MARGIN,
+        duration: EXIT_DURATION,
+        ease: "power3.in",
+      },
+      0,
+    );
+
+    // 入場: 真下から、めくれとスピンをほどきながら中央へ昇ってくる。
+    // デモの自動再生は p を等速で回している(表情は smoothstep と sin が作る)ので、
+    // enter にイージングは掛けない
+    tl.to(this.mesh.position, { y: 0, duration: ENTER_DURATION, ease: "power3.out" }, ENTER_DELAY);
+    tl.to(this.uniforms.enter, { value: 0, duration: ENTER_DURATION, ease: "power3.out" }, ENTER_DELAY);
+
+    this.cycle = tl;
   }
 
   // メッシュ自体をクリックしたときだけ反応する。
@@ -396,7 +486,7 @@ export default class ProjectFold {
       this.uniforms.hoverUv.value.copy(hit);
     }
     this.hoverUv.copy(hit);
-    this.hoverTarget = 1;
+    this.hoverTarget = .5;
   }
 
   // 位置も強さもフレームをまたいで追いつかせる(ポインタの飛びをそのまま板に出さない)。
@@ -413,8 +503,7 @@ export default class ProjectFold {
 
   // 表示中の項目（クロスフェードで半分を超えた側が「見えている」板）
   currentItem() {
-    const index =
-      this.uniforms.texMix.value > 0.5 ? (this.current + 1) % this.items.length : this.current;
+    const index = this.uniforms.texMix.value > 0.5 ? (this.current + 1) % this.items.length : this.current;
     return this.items[index];
   }
 
@@ -461,13 +550,16 @@ export default class ProjectFold {
     }
 
     this.cycle?.pause();
-    // クロスフェードの途中で踏まれても、遷移先の板を表向きに確定させてから折る
-    if (this.current !== index || this.uniforms.texMix.value > 0) {
-      this.current = index;
-      this.uniforms.texMix.value = 0;
-      this.applyTextures();
-      this.syncItems();
-    }
+    // 入れ替えの途中で踏まれても、板を中央に戻して遷移先の絵を確定させてから折る
+    this.exitMesh.visible = false;
+    this.uniforms.leave.value = 0;
+    this.uniforms.enter.value = 0;
+    this.mesh.position.set(0, 0, 0);
+    this.mesh.rotation.set(0, 0, 0);
+    this.current = index;
+    this.uniforms.texMix.value = 0;
+    this.applyTextures();
+    this.syncItems();
 
     return {
       leave: this.playExit(),
@@ -480,6 +572,13 @@ export default class ProjectFold {
   async playExit() {
     this.leaving = true;
     this.folded = true;
+    // 入れ替えの途中でも、板を中央へ戻してから折る(Swup 無しの直接遷移もここを通る)
+    this.cycle?.pause();
+    this.exitMesh.visible = false;
+    this.uniforms.leave.value = 0;
+    this.uniforms.enter.value = 0;
+    this.mesh.position.set(0, 0, 0);
+    this.mesh.rotation.set(0, 0, 0);
     this.section.classList.add("is-folded");
     // 遷移先のメイン画像は、板から位置を引き渡すまで隠しておく
     document.documentElement.classList.add(HERO_HANDOFF_CLASS);
@@ -730,6 +829,7 @@ export default class ProjectFold {
       tex.dispose();
     }
     this.material?.dispose();
+    this.exitMaterial?.dispose();
     this.bgMaterial?.dispose();
     this.geometry?.dispose();
     this.bgGeometry?.dispose();

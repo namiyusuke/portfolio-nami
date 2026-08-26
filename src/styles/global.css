@@ -6,7 +6,6 @@
 html.lenis,
 html.lenis body {
   height: auto;
-
 }
 
 .lenis.lenis-smooth {
@@ -652,7 +651,7 @@ body::before {
   visibility: visible;
   opacity: 1;
 }
-.p-project__title{
+.p-project__title {
   font-family: var(--ff-mincho);
   font-weight: 400;
   /* 1440px で 128px。SP は 100vw 追従だと小さくなりすぎるので 48px で下げ止める */
@@ -660,17 +659,17 @@ body::before {
   line-height: 1.2;
   padding-inline: var(--offset-inline);
 }
-.project__outline p{
+.project__outline p {
   font-weight: 400;
 }
-.p-about{
+.p-about {
   color: #fff;
 }
-.p-about__title{
+.p-about__title {
   /* 1440px で 133px。SP はそのままだと空きすぎるので 56px で止める */
   margin-bottom: clamp(56px, calc(133 / 1440 * 100vw), 133px);
 }
-.p-about__content{
+.p-about__content {
   display: flex;
   flex-direction: column;
   max-width: 558px;
@@ -678,11 +677,11 @@ body::before {
   /* max-width より画面が狭いときに文字が端に貼り付かないように */
   padding-inline: var(--offset-inline);
 }
-.p-about__content-inner{
+.p-about__content-inner {
   max-width: 440px;
   margin-inline: auto;
 }
-.p-about__name{
+.p-about__name {
   display: flex;
   /* SP では英字名と和名が1行に収まらないので折り返す */
   flex-wrap: wrap;
@@ -690,17 +689,17 @@ body::before {
   align-items: flex-end;
   margin-bottom: 40px;
 }
-.p-about__name-en{
+.p-about__name-en {
   font-family: var(--ff-gothic);
   font-weight: 400;
   font-size: clamp(1.5rem, 6vw, 2rem);
   line-height: 1;
 }
-.p-about__name-ja{
+.p-about__name-ja {
   font-weight: 400;
   font-size: 1rem;
 }
-.footer-sns-list li a{
+.footer-sns-list li a {
   /* 画面が狭いときは 170px を上限に縮む */
   width: min(170px, 100%);
   min-height: 45px;
@@ -711,11 +710,11 @@ body::before {
   border: 1px solid #fff;
 }
 @media (min-width: 768px) {
-  .footer-sns-list li a{
+  .footer-sns-list li a {
     width: 170px;
   }
 }
-.p-footer__copyright{
+.p-footer__copyright {
   text-align: center;
   font-size: 13px;
   font-weight: 300;

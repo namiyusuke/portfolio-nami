@@ -278,10 +278,7 @@ export const initHeroTypography = () => {
       const D = 2000;
       const loop = (t) => {
         const p = Math.min(1, (t - t0) / D);
-        dmap.setAttribute(
-          "scale",
-          ((1 - p) ** 2.2 * 36 * (0.55 + Math.random() * 0.8)).toFixed(2),
-        );
+        dmap.setAttribute("scale", ((1 - p) ** 2.2 * 36 * (0.55 + Math.random() * 0.8)).toFixed(2));
         if (p < 1) {
           introRaf = requestAnimationFrame(loop);
         } else {
@@ -342,10 +339,13 @@ export const initHeroTypography = () => {
       }));
       frames.push(Object.assign({}, frames[frames.length - 1], { opacity: 0 }));
       push(caret, frames, { duration: reading.length * step, easing: "linear" });
-      later(() => {
-        caret.style.display = "none";
-        done();
-      }, reading.length * step + 240);
+      later(
+        () => {
+          caret.style.display = "none";
+          done();
+        },
+        reading.length * step + 240,
+      );
     },
   };
 
@@ -373,12 +373,7 @@ export const initHeroTypography = () => {
       g.vy = g.vy * M.damping + (ty - g.oy) * M.follow;
       g.ox += g.vx;
       g.oy += g.vy;
-      if (
-        Math.abs(g.vx) > 0.01 ||
-        Math.abs(g.vy) > 0.01 ||
-        Math.abs(g.ox) > 0.05 ||
-        Math.abs(g.oy) > 0.05
-      ) {
+      if (Math.abs(g.vx) > 0.01 || Math.abs(g.vy) > 0.01 || Math.abs(g.ox) > 0.05 || Math.abs(g.oy) > 0.05) {
         moving = true;
         g.p.style.transform = `translate(${g.ox.toFixed(2)}px, ${g.oy.toFixed(2)}px)`;
       } else if (g.ox || g.oy) {

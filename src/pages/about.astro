@@ -1,20 +1,765 @@
 ---
-import Layout from '../layouts/Layout.astro';
+// Config
+import { SITE } from "@src/config";
 
-const title = 'About | kuuche design';
+// Layout
+import Layout from "@layouts/Layout.astro";
+import { getNotePosts } from "../libs/note";
+
+// Components
+import HeroTypography from "@src/components/HeroTypography.astro";
+
+// Assets
+import coverBg from "@src/assets/images/cover-bg.jpg";
+import mvText from "@src/assets/images/mv-text.svg";
+import logoPrimary from "@src/assets/images/logo-primary.svg";
+import heroIntroText from "@src/assets/images/hero-intro-text.svg";
+import headingProject from "@src/assets/images/heading-project.svg";
+// Sanity から project 一覧を取得
+import { getProjects, getAnimations, imageAspectRatio, urlFor } from "@src/libs/sanity";
+const animations = await getAnimations(10);
+const projects = await getProjects(10);
+console.log(projects);
+
+// イントロで奥へ流すカードのテクスチャ。project / animation のサムネから最大10枚。
+// 板(1.5 : 2.0)と同じ縦長比で切り出しておくと絵柄が歪まない
+const introTextures = [...projects, ...animations]
+  .flatMap((item) => (item.thumbnail ? [item.thumbnail] : []))
+  .slice(0, 10)
+  .map((thumbnail) =>
+    urlFor(thumbnail).width(768).height(1024).fit("crop").auto("format").url()
+  );
+// note の RSS から記事(タイトル・サムネイル・URL)を取得
+// const notePosts = await getNotePosts(10);
 ---
 
-<Layout title={title} description="About kuuche design.">
-  <main>
-    <h1>About</h1>
-    <p>Swupによるページ遷移の動作確認用ページ。</p>
-  </main>
+<Layout title={`ページタイトル | ${SITE.name}`} description="ページの紹介文">
+  <section class="p-about">
+    <h2 class="p-about__title p-project__title">About</h2>
+    <div class="p-about__content">
+      <div class="p-about__content-inner">
+        <h3 class="p-about__name">
+          <span class="p-about__name-en">Yusuke Namikawa</span>
+          <span class="p-about__name-ja">並河祐輔</span>
+        </h3>
+        <p class="p-about__profile">
+          大学卒業後、社会福祉士として経験を詰んだ後
+          2021年10月より制作会社にてwebエンジニアになる.
+          得意なこと・できること：jsやcssを用いたアニメーション、インタラクション、マークアップ
+        </p>
+      </div>
+      <div class="footer-sns">
+        <ul class="footer-sns-list">
+          <li>
+            <a href="https://twitter.com/namikawa_yusuke" target="_blank" rel="noopener noreferrer">
+              X
+            </a>
+          </li>
+          <li>
+            <a href="https://www.instagram.com/namikawa_yusuke/" target="_blank" rel="noopener noreferrer">
+              Codepen
+            </a>
+          </li>
+          <li>
+            <a href="https://www.linkedin.com/in/namikawa-yusuke/" target="_blank" rel="noopener noreferrer">
+              Contact
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+<div class="p-footer__copyright">
+  <p>@2026 Yusuke Namikawa</p>
+</div>
+  </section>
 </Layout>
-
 <style>
-  main {
+  /* --------------------------------------------------------------
+   FV
+   既定は背景だけ。WebGL が使えて prefers-reduced-motion でもない場合だけ
+   JS が .is-webgl を付けてキャンバスを立てる。
+   モデルの読み込みが終わったら .is-ready でフェードインさせる。
+  -------------------------------------------------------------- */
+  .p-hero {
+    position: relative;
+    inset: 0;
+    height: 100svh;
+  }
+
+  /* --------------------------------------------------------------
+   イントロ(カードが螺旋を描いて奥へ流れる)
+   既定は非表示。WebGL が使えて初回表示のときだけ JS が .is-webgl を付けて再生し、
+   終わったら .is-done でフェードアウトして背後の FV を見せる。
+  -------------------------------------------------------------- */
+  .p-hero__intro {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    /* 再生中もスクロールやクリックは奪わない */
+    pointer-events: none;
+  }
+
+  .p-hero__intro.is-webgl {
+    display: block;
+  }
+
+  .p-hero__intro.is-done {
+    opacity: 0;
+    transition: opacity 0.8s var(--ease-out-cubic);
+  }
+
+  .p-hero__intro-canvas {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* renderer が差し込む canvas はスコープ外なので :global で拾う */
+  .p-hero__intro-canvas :global(canvas) {
+    display: block;
+  }
+
+  /* 全身 → 上半身へ寄せるためのスクロール区間。
+     1画面ぶん余分に確保し、はみ出た量を 0〜1 に正規化してカメラを動かす。
+     ここを 300svh にすればもっとゆっくり寄る。 */
+  .p-hero.is-webgl {
+    height: 200svh;
+  }
+
+  /* モデルの縁は alpha で抜くので、背面はサイト共通の背景
+     (body::before のグラデーション)を透かす。
+     body::before と同じ z-index: -1 のまま不透明色を敷くと、
+     DOM 順でこちらが手前に来てグラデーションを覆ってしまう。 */
+  .p-hero__stage {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-color: transparent;
+  }
+
+  .p-hero__canvas {
+    display: none;
+  }
+
+  .is-webgl .p-hero__canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+
+  /* html.is-ready と混ざらないよう、セクション自身に付いた場合だけに絞る */
+  .p-hero.is-ready .p-hero__canvas {
+    opacity: 1;
+  }
+
+  /* renderer が差し込む canvas はスコープ外なので :global で拾う */
+  .p-hero__canvas :global(canvas) {
+    display: block;
+  }
+
+  /* --------------------------------------------------------------
+   Animation セクション
+   既定は素のリスト。WebGL が使える場合だけ JS が .is-webgl を付け、
+   sticky + canvas のスライダー表示に切り替える。
+  -------------------------------------------------------------- */
+  .p-animation {
+    position: relative;
+  }
+
+  /* スライド枚数ぶん（+ 最後の1枚が抜けるぶん）のスクロール量を確保する */
+  .p-animation.is-webgl {
+    height: calc((var(--p-animation-count) + 1) * 80svh);
+  }
+
+  /* Projects へのクロスフェード用の重なり。
+     Animation 側に 1 画面ぶん足し、Projects 側を同じだけ引き上げて
+     100svh の遷移区間を作る（Animation の sticky はこの区間中も効いている）。
+     区間中の opacity と Projects ステージの固定は section-crossfade.js が
+     毎フレーム駆動し、フェード完了と同時に通常フローへ着地する */
+  .p-animation.is-webgl:has(+ .p-project.is-webgl) {
+    height: calc((var(--p-animation-count) + 1) * 80svh + 100svh);
+  }
+
+  .p-animation.is-webgl + .p-project.is-webgl {
+    margin-top: -100svh;
+  }
+
+  .p-animation__title {
+    color: #fff;
+    font-family: var(--ff-mincho);
+  }
+
+  /* 板の縁は alpha で抜くので、背面はサイト共通の暗い背景を透かす */
+  .is-webgl .p-animation__stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    background-color: transparent;
+    /* クロスフェード中は section-crossfade.js が毎フレーム opacity を書く */
+    will-change: opacity;
+  }
+
+  .p-animation__canvas {
+    display: none;
+  }
+
+  .is-webgl .p-animation__canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+  }
+
+  /* renderer が差し込む canvas はスコープ外なので :global で拾う */
+  .p-animation__canvas :global(canvas) {
+    display: block;
+  }
+
+  .is-webgl .p-animation__list {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
     display: grid;
     place-items: center;
-    min-block-size: 70svh;
+    perspective: 800px;
+  }
+
+  /* 全項目を同じセルに重ね、GSAP が rotationX で円筒状に回す */
+  .is-webgl .p-animation__list-item {
+    grid-area: 1 / 1;
+    /* place-items: center は max-content 幅になるので、
+       長いタイトルが画面外へ出ないよう上限を切っておく */
+    max-width: 100%;
+    backface-visibility: hidden;
+  }
+
+  .is-webgl .p-animation__list-item-title {
+    color: #fff;
+    font-family: var(--ff-mincho);
+    font-size: clamp(24px, calc(48 / 1440 * 100vw), 48px);
+    text-align: center;
+    /* SP は 1行に収まらないので折り返す(md 以上は元どおり nowrap) */
+    padding-inline: var(--offset-inline);
+    text-wrap: balance;
+  }
+
+  @media (--md) {
+    .is-webgl .p-animation__list-item-title {
+      padding-inline: 0;
+      white-space: nowrap;
+    }
+  }
+
+  /* サムネは板のテクスチャとして描くので DOM 側は隠す */
+  .is-webgl .p-animation__list-item-thumb {
+    display: none;
+  }
+
+  /* --------------------------------------------------------------
+   WebGL 非対応 / prefers-reduced-motion 時の素のリスト表示。
+   SP はここに落ちる端末もあるので、最低限読める体裁を持たせておく。
+  -------------------------------------------------------------- */
+  .p-animation:not(.is-webgl) .p-animation__list,
+  .p-project:not(.is-webgl) .p-project__list {
+    display: grid;
+    gap: clamp(32px, 6vw, 64px);
+    margin-top: clamp(32px, 6vw, 64px);
+    padding-inline: var(--offset-inline);
+  }
+
+  @media (--md) {
+    .p-animation:not(.is-webgl) .p-animation__list,
+    .p-project:not(.is-webgl) .p-project__list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .p-animation:not(.is-webgl) .p-animation__list-item-title {
+    margin-bottom: 12px;
+    color: #fff;
+    font-family: var(--ff-mincho);
+    font-size: clamp(18px, 4.5vw, 24px);
+  }
+
+  .p-animation:not(.is-webgl) .p-animation__list-item-thumb,
+  .p-project:not(.is-webgl) .p-project__list-item-thumb {
+    width: 100%;
+    height: auto;
+  }
+
+  /* --------------------------------------------------------------
+   Projects セクション
+   既定は素のリスト。WebGL2(=WebGPU のフォールバック先)が使える場合だけ
+   JS が .is-webgl を付け、1画面のステージ表示に切り替える。
+   板をクリックすると折りたたみが始まり(その間は .is-folded が付く)、
+   折り終わりからそのまま詳細ページへ遷移する。
+  -------------------------------------------------------------- */
+  .p-project {
+    position: relative;
+    z-index: 10;
+  }
+
+  .p-project__title {
+    color: #fff;
+    font-family: var(--ff-mincho);
+  }
+
+  /* 板の縁は alpha で抜くので、背面はサイト共通の暗い背景を透かす */
+  .is-webgl .p-project__stage {
+    position: relative;
+    height: 100svh;
+    background-color: transparent;
+    /* クロスフェード中は section-crossfade.js が毎フレーム transform / opacity を書く */
+    will-change: transform, opacity;
+  }
+
+  .p-project__canvas {
+    display: none;
+  }
+
+  .is-webgl .p-project__canvas {
+    position: absolute;
+    inset: 0;
+    display: block;
+  }
+
+  /* renderer が差し込む canvas はスコープ外なので :global で拾う */
+  .p-project__canvas :global(canvas) {
+    display: block;
+  }
+
+  /* 全項目を同じセルに重ね、表示中の1件だけ JS が opacity で出す。
+     クリックは板（canvas）へ通したいので、リンク以外は当たり判定を切る */
+  .is-webgl .p-project__list {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: grid;
+    align-content: end;
+    justify-items: center;
+    padding-bottom: clamp(24px, 8svh, 72px);
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+  }
+
+  /* 折りたたみ中は見出しとプロジェクト名を消して板の動きだけを見せる。
+     背景の流れる文字も sketch.js が同じ長さでフェードさせている
+     (.p-project__title は Animation セクションと共用なので、セクションで絞る) */
+  .p-project.is-webgl .p-project__title {
+    transition: opacity 0.6s ease;
+  }
+
+  .is-webgl.is-folded .p-project__list,
+  .p-project.is-webgl.is-folded .p-project__title {
+    opacity: 0;
+  }
+
+  .is-webgl .p-project__list-item {
+    grid-area: 1 / 1;
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .is-webgl .p-project__link {
+    display: inline-block;
+    color: #fff;
+    text-decoration: none;
+    pointer-events: auto;
+  }
+
+  .is-webgl .p-project__list-item-title {
+    font-family: var(--ff-mincho);
+    font-size: clamp(24px, calc(48 / 1440 * 100vw), 48px);
+    padding-inline: var(--offset-inline);
+    text-wrap: balance;
+  }
+
+  @media (--md) {
+    .is-webgl .p-project__list-item-title {
+      padding-inline: 0;
+      white-space: nowrap;
+    }
+  }
+
+  .is-webgl .p-project__list-item-subtitle {
+    margin-top: 8px;
+    font-size: 14px;
+  }
+
+  /* サムネは板のテクスチャとして描くので DOM 側は隠す */
+  .is-webgl .p-project__list-item-thumb {
+    display: none;
+  }
+
+  .footer-sns {
+    margin-top: clamp(48px, calc(100 / 1440 * 100vw), 100px);
+    margin-bottom: clamp(120px, calc(280 / 1440 * 100vw), 280px);
+  }
+
+  /* 横並びにするのはボタンを持つリスト側。SP は縦積みで中央に寄せる */
+  .footer-sns-list {
+    display: grid;
+    gap: 16px;
+    justify-content: center;
+  }
+
+  @media (--md) {
+    .footer-sns-list {
+      grid-auto-flow: column;
+      justify-content: start;
+      column-gap: 20px;
+    }
+  }
+.footer-logoText{
+  max-width: 128px;
+  margin-inline: auto;
+}
+.footer-logo-img{
+  max-width: 102px;
+  margin-inline: auto;
+}
+.c-button a{
+  display: inline-flex;
+  column-gap: 32px;
+  color: #46FE6E;
+  border-radius:30px ;
+  border: #46FE6E 1px solid;
+  padding-inline:24px;
+  padding-block:12px;
+  font-size: 14px;
+}
+  .magazine-intro-text{
+    color: #fff;
+    font-family: var(--ff-mincho);
+    padding-bottom:22px ;
+  }
+  .project-section{
+    margin-top: 50vh;
+    z-index: 10;
+    position: relative;
+  }
+  .magazine-wrapper{
+    width: calc(1196 / 1440 * 100%);
+    margin-inline: auto;
+  }
+  .note-swiper-wrapper{
+    position: relative;
+  }
+  .hero__intro-wrapper{
+    height: 100vh;
+    width: 100vw;
+    position: relative;
+  }
+  .hero__intro-text{
+    position: absolute;
+    inset-inline: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    top: 100px;
+    z-index: 10;
+  }
+  .hero__intro-text-ja{
+    max-width: 353px;
+    margin-bottom: 120px;
+  }
+  .hero__intro-text-en{
+    color:#fff ;
+    text-align: center;
+    font-family:var(--ff-mincho) ;
+  }
+.cover-bg {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  /* 背面に固定。スクロールで現れる背景 */
+  z-index: 0;
+}
+
+.hero-wrapper{
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+.hero-ttl{
+  position: absolute;
+  inset-inline: 0;
+  margin-inline: auto;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  top: min(calc(354 / 1440 * 100vw),354px);
+}
+.hero-ttl img{
+  width: 100%;
+}
+.hero-mvText{
+  max-width: 128px;
+}
+.hero-logoPrimary{
+  max-width: 102px;
+}
+/* スクロールで上端 84px 地点に達したら固定 */
+.hero-logoPrimary.is-fixed{
+  position: fixed;
+  top: min(calc(84 / 1440 * 100vw), 84px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 102px;
+  z-index: 20;
+  transition: top 0.6s ease;
+}
+/* footer まで到達したら下方へアニメーション */
+.footer{
+  position: relative;
+}
+.hero-logoPrimary.is-fixed.is-bottom{
+  opacity: 0;
+  visibility: hidden;
+}
+.footer-logo{
+  bottom: 380px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-inline: auto;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+}
+  .hero {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    /* cover-bg の手前に重ねる */
+    z-index: 1;
+    will-change: opacity;
+    /* cover-bg へのクロスフェード */
+    transition: opacity 0.6s ease;
+  }
+  /* IntersectionObserver で付与。video をフェードアウトして cover-bg を見せる */
+  .hero.is-hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .hero__video {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* hero が fixed なので、1画面分のスクロール領域を確保する */
+  .hero-spacer {
+    height: 100vh;
+  }
+
+  .marquee {
+    position: relative;
+    /* cover-bg(0)・hero(1) より前面に表示 */
+    z-index: 2;
+    overflow: hidden;
+    width: 100%;
+    /* translateY のずれ分を上下に確保して見切れを防ぐ */
+    padding-block: 60px;
+  }
+
+  .marquee__track {
+    display: flex;
+    align-items: center;
+    width: max-content;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    /* 2セット分を流すので -50% で1周 */
+    animation: marquee-scroll 40s linear infinite;
+  }
+
+  /* ホバー中はスクロールを一時停止 */
+  .marquee:hover .marquee__track {
+    animation-play-state: paused;
+  }
+
+  .marquee__item {
+    flex: 0 0 auto;
+    position: relative;
+    z-index: 0;
+  }
+  /* ホバー中の画像を最前面に持ち上げて、隣に潜らないようにする */
+  .marquee__item:hover {
+    z-index: 10;
+  }
+  /* 上下にランダムっぽくずらす */
+  .marquee__item:nth-child(5n + 1) { transform: translateY(-40px); }
+  .marquee__item:nth-child(5n + 2) { transform: translateY(20px); }
+  .marquee__item:nth-child(5n + 3) { transform: translateY(-10px); }
+  .marquee__item:nth-child(5n + 4) { transform: translateY(48px); }
+  .marquee__item:nth-child(5n + 5) { transform: translateY(8px); }
+
+  .marquee__item img {
+    display: block;
+    height: 120px;
+    width: auto;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .marquee__item:hover img {
+    transform: scale(1.2);
+    display: block;
+  }
+[data-direction="center"]{
+  text-align: center;
+}
+.heading-ja{
+  margin-bottom: 10px;
+}
+.heading-en{
+  font-size: 18px;
+  font-weight: 400;
+  color: #fff;
+  display: block;
+  line-height: 1;
+}
+.heading-project{
+  padding-bottom: 40px;
+}
+  @keyframes marquee-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* note セクション(Swiper スライダー) */
+  .note {
+    position: relative;
+    z-index: 10;
+    margin-top: 200px;
+    /* 画面外に流れるスライドで横スクロールが出ないように */
+    overflow: hidden;
+  }
+  .note .heading {
+    margin-bottom: 40px;
+  }
+  .note-swiper-area {
+    margin-left: 475px;
+    overflow-x: clip;
+    position: relative;
+  }
+  .note-swiper {
+    width: 100%;
+    /* 右側のスライドは画面外まで続いて見えるように */
+    overflow: visible;
+  }
+  .note-swiper__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .note-card {
+    /* slidesPerView:auto なので幅をスライド自身で決める */
+    flex: 0 0 auto;
+    width: auto;
+  }
+  .note-card__link {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    color: #fff;
+    text-decoration: none;
+    position: relative;
+  }
+  /* 縦書きタイトル(画像左) */
+  .note-card__title {
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    max-height: 230px;
+    margin: 0;
+    font-family: var(--ff-mincho);
+    font-size: 24px;
+    overflow: hidden;
+    position: absolute;
+    right: 30px;
+    top: -68px;
+  }
+  .note-card__thumb {
+    flex: 0 0 auto;
+    width: 345px;
+    overflow: hidden;
+    aspect-ratio: 345 / 194;
+  }
+  .note-card__thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+  }
+  .note-card__link:hover .note-card__thumb img {
+    transform: scale(1.08);
+  }
+
+  /* 前へ / 次へ ボタン */
+  .note-swiper__nav {
+    display: flex;
+    gap: 20px;
+    position: absolute;
+    bottom:0;
+    left: 384px;
+    z-index: 10;
+  }
+  .note-swiper__btn {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    padding: 0;
+    color: #fff;
+    cursor: pointer;
+    background: none;
+    border: none;
+    transition: opacity 0.3s ease;
+  }
+  .note-swiper__btn:hover {
+    opacity: 0.6;
+  }
+  /* Swiper が端で無効化したボタンは薄く表示 */
+  .note-swiper__btn.swiper-button-disabled {
+    cursor: default;
+    opacity: 0.25;
+  }
+  .note-swiper__btn-arrow {
+    font-size: 16px;
+  }
+.footer{
+  height: calc(1024 / 810 * 100vh);
+  }
+  .footer-bottom{
+    position: absolute;
+    inset-inline: 0;
+    width: calc(1235 / 1440 * 100%);
+    margin-inline: auto;
+    z-index: 10;
+    bottom: 66px;
+    color: #46FE6E;
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--ff-mincho);
+  }
+  .footer-company{
+    font-size: 20px;
   }
 </style>
+
+<script>
+
+</script>

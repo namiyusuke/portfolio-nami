@@ -1,14 +1,15 @@
-import gsap from 'gsap';
-import { runPageEnter, runPageExit } from './page-exit.js';
+import gsap from "gsap";
+
+import { runPageEnter, runPageExit } from "./page-exit.js";
 
 // 初回ロード時のアニメーション(ローディング画面: カウンター + プログレスバー)
 export const initial = () =>
   new Promise((resolve) => {
-    const counter = document.querySelector('.c-loading__counter');
+    const counter = document.querySelector(".c-loading__counter");
     const progress = { value: 0 };
     const tl = gsap.timeline({
       onComplete: () => {
-        document.documentElement.classList.add('is-ready');
+        document.documentElement.classList.add("is-ready");
         resolve();
       },
     });
@@ -17,46 +18,43 @@ export const initial = () =>
     tl.to(progress, {
       value: 100,
       duration: 1.8,
-      ease: 'power2.inOut',
+      ease: "power2.inOut",
       onUpdate: () => {
         if (counter) {
-          counter.textContent = String(Math.floor(progress.value)).padStart(
-            3,
-            '0'
-          );
+          counter.textContent = String(Math.floor(progress.value)).padStart(3, "0");
         }
       },
     });
 
     // バー 0 → 100% (カウンターと同時進行)
     tl.to(
-      '.c-loading__bar-fill',
+      ".c-loading__bar-fill",
       {
         scaleX: 1,
         duration: 1.8,
-        ease: 'power2.inOut',
+        ease: "power2.inOut",
       },
-      '<'
+      "<",
     );
 
     // ロード完了後フェードアウト
     tl.to(
-      '.c-loading',
+      ".c-loading",
       {
         opacity: 0,
         duration: 0.6,
-        ease: 'power2.out',
+        ease: "power2.out",
       },
-      '+=0.2'
+      "+=0.2",
     );
   });
 
 const fadeOut = (duration) =>
   new Promise((resolve) => {
-    gsap.to('#swup', {
+    gsap.to("#swup", {
       opacity: 0,
       duration,
-      ease: 'power2.in',
+      ease: "power2.in",
       onComplete: resolve,
     });
   });
@@ -83,21 +81,21 @@ export const enter = async () => {
 
   if (reveal) {
     // フェードは挟まない。板が動いている間に中身が出そろう
-    gsap.set('#swup', { opacity: 1 });
+    gsap.set("#swup", { opacity: 1 });
     await reveal;
     return;
   }
 
   await new Promise((resolve) => {
     gsap.fromTo(
-      '#swup',
+      "#swup",
       { opacity: 0 },
       {
         opacity: 1,
         duration: 0.4,
-        ease: 'power2.out',
+        ease: "power2.out",
         onComplete: resolve,
-      }
+      },
     );
   });
 };

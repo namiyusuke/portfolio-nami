@@ -48,11 +48,7 @@ export const initProjectHero = () => {
 
   // ステージは一覧の canvas と同じ「画面幅 × 100svh」。同じ寸法・同じ比率から同じ答えが出る
   const apply = () => {
-    const { width, height } = foldedPlateSize(
-      stage.offsetWidth,
-      stage.offsetHeight,
-      imageAspect(image),
-    );
+    const { width, height } = foldedPlateSize(stage.offsetWidth, stage.offsetHeight, imageAspect(image));
     // 一覧の canvas はビューポート上端に揃うので、板の上端はビューポートから見て
     // (100svh - 画像高) / 2。ステージはヘッダーのぶん下から始まるため、その分を引く
     const stageTop = stage.getBoundingClientRect().top + window.scrollY;
@@ -65,7 +61,6 @@ export const initProjectHero = () => {
   teardown = () => window.removeEventListener("resize", apply);
 };
 
-
 export const handoffProjectHero = async (rect) => {
   const stage = document.querySelector(STAGE_SELECTOR);
   const image = stage?.querySelector(IMAGE_SELECTOR);
@@ -77,10 +72,7 @@ export const handoffProjectHero = async (rect) => {
   setFrame(stage, { width: rect.width, height: rect.height, top: rect.top - box.top });
 
   // decode() は visibility: hidden のままでも走る。読めなくても遷移は止めない
-  await Promise.race([
-    image.decode().catch(() => {}),
-    new Promise((resolve) => setTimeout(resolve, DECODE_TIMEOUT)),
-  ]);
+  await Promise.race([image.decode().catch(() => {}), new Promise((resolve) => setTimeout(resolve, DECODE_TIMEOUT))]);
 
   return true;
 };

@@ -42,11 +42,7 @@ const scaleForFoldedWidth = (width, stageHeight, aspect) => {
 // 折り終わりが PLATE_WIDTH になるのが基本。ただし左右・上下には
 // PLANE_FIT ぶんの余白を必ず残すので、画面が小さいときはそちらが優先される
 export const plateScale = (stageWidth, stageHeight, aspect = DEFAULT_ASPECT) => {
-  const width = Math.min(
-    PLATE_WIDTH,
-    stageWidth * PLANE_FIT,
-    ((stageHeight * PLANE_FIT) / PLANE_HEIGHT) * aspect,
-  );
+  const width = Math.min(PLATE_WIDTH, stageWidth * PLANE_FIT, ((stageHeight * PLANE_FIT) / PLANE_HEIGHT) * aspect);
 
   return scaleForFoldedWidth(width, stageHeight, aspect);
 };

@@ -136,7 +136,7 @@ export default class AnimationSlider {
 
   createMaterial(url, index) {
     const texture = this.loader.load(url);
-   // texture.colorSpace = THREE.SRGBColorSpace;
+    // texture.colorSpace = THREE.SRGBColorSpace;
 
     return new THREE.ShaderMaterial({
       side: THREE.DoubleSide,

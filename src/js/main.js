@@ -8,6 +8,7 @@ import { initLenis, resetScroll } from "./libs/lenis.js";
 import Observer from "./libs/observer.js";
 import { initProjectFold } from "./libs/project-fold.js";
 import { initProjectHero } from "./libs/project-hero.js";
+import { initSectionCrossfade } from "./libs/section-crossfade.js";
 import { initNoteSwiper } from "./libs/swiper.js";
 import { initSwup, registerPageInit, registerPageTransition } from "./libs/swup.js";
 import { enter, initial, leave } from "./libs/transition.js";
@@ -57,6 +58,9 @@ registerPageInit(() => {
   initHeroHolo();
   initAnimationSlider();
   initProjectFold();
+  // Animation → Projects のクロスフェード。
+  // 両 init が同期的に付ける is-webgl を見るので、この順で呼ぶ
+  initSectionCrossfade();
   // 詳細ページのメイン画像を板と同じ矩形に合わせる(遷移演出の着地先になる)
   initProjectHero();
 });

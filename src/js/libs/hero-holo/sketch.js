@@ -2,6 +2,7 @@ import gsap from "gsap";
 import * as THREE from "three";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+
 import { BLUR_FRAGMENT, BRIGHT_FRAGMENT, COMPOSITE_FRAGMENT, QUAD_VERTEX } from "./holo-effect.js";
 import { createHoloEnvironment } from "./holo-environment.js";
 
@@ -51,9 +52,7 @@ export default class HeroHolo {
   constructor({ section, container }) {
     this.section = section;
     this.container = container;
-    this.quality = window.matchMedia("(max-width: 767px)").matches
-      ? QUALITY.mobile
-      : QUALITY.desktop;
+    this.quality = window.matchMedia("(max-width: 767px)").matches ? QUALITY.mobile : QUALITY.desktop;
 
     this.width = 0;
     this.height = 0;
@@ -359,10 +358,7 @@ export default class HeroHolo {
   // -- events -----------------------------------------------------
 
   handlePointerMove(event) {
-    this.pointerTarget.set(
-      (event.clientX / window.innerWidth) * 2 - 1,
-      (event.clientY / window.innerHeight) * 2 - 1,
-    );
+    this.pointerTarget.set((event.clientX / window.innerWidth) * 2 - 1, (event.clientY / window.innerHeight) * 2 - 1);
   }
 
   handleVisibilityChange() {

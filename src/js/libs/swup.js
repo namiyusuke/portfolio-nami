@@ -1,8 +1,9 @@
-import SwupBodyClassPlugin from '@swup/body-class-plugin';
-import SwupHeadPlugin from '@swup/head-plugin';
-import SwupScriptsPlugin from '@swup/scripts-plugin';
-import Swup from 'swup';
-import { sendPageView } from './analytics.js';
+import SwupBodyClassPlugin from "@swup/body-class-plugin";
+import SwupHeadPlugin from "@swup/head-plugin";
+import SwupScriptsPlugin from "@swup/scripts-plugin";
+import Swup from "swup";
+
+import { sendPageView } from "./analytics.js";
 
 // ページ内の演出から swup.navigate() を呼べるように、生成したインスタンスを保持する
 let swup = null;
@@ -32,17 +33,13 @@ export const registerPageTransition = ({ initial, leave, enter } = {}) => {
 
 export const initSwup = () => {
   swup = new Swup({
-    containers: ['#swup'],
+    containers: ["#swup"],
     // CSSアニメーション検出を無効化(アニメーションは下のフックでGSAPが制御する)
     animationSelector: false,
     // head-plugin: title/meta/ページ固有CSSの差し替え
     // body-class-plugin: ページごとに変わる body のクラスを遷移時に差し替える
     // scripts-plugin: Astroのアイランド(client:*)等、遷移後の新DOM内スクリプトを再実行
-    plugins: [
-      new SwupHeadPlugin(),
-      new SwupBodyClassPlugin(),
-      new SwupScriptsPlugin(),
-    ],
+    plugins: [new SwupHeadPlugin(), new SwupBodyClassPlugin(), new SwupScriptsPlugin()],
   });
 
   // 初期化の時の処理
@@ -51,16 +48,16 @@ export const initSwup = () => {
   onInitial();
 
   // 遷移前(古いページを退場)
-  swup.hooks.replace('animation:out:await', async (visit) => {
+  swup.hooks.replace("animation:out:await", async (visit) => {
     await onLeave(visit);
   });
 
   // 遷移後(新しいページを入場)
-  swup.hooks.replace('animation:in:await', async (visit) => {
+  swup.hooks.replace("animation:in:await", async (visit) => {
     await onEnter(visit);
   });
 
-  swup.hooks.on('page:view', () => {
+  swup.hooks.on("page:view", () => {
     onPageInit();
     sendPageView();
   });

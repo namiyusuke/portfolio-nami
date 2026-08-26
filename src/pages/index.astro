@@ -56,7 +56,7 @@ const introTextures = [...projects, ...animations]
     style={`--p-animation-count:${animations.length}`}
   >
     <h2 class="p-animation__title p-project__title">Animation</h2>
-    <div class="p-animation__stage">
+    <div class="p-animation__stage js-animation-stage">
       <div class="p-animation__canvas js-animation-canvas" aria-hidden="true"></div>
       <ul class="p-animation__list">
         {animations.map((animation) => (
@@ -89,7 +89,7 @@ const introTextures = [...projects, ...animations]
     </div>
   </section>
   <section class="p-project js-project-fold">
-    <div class="p-project__stage">
+    <div class="p-project__stage js-project-stage">
        <h2 class="p-project__title">projects</h2>
       <div class="p-project__canvas js-project-canvas" aria-hidden="true"></div>
       <ul class="p-project__list">
@@ -103,7 +103,6 @@ const introTextures = [...projects, ...animations]
             data-text={project.title}
           >
             <a class="p-project__link" href={`${SITE.base}/project/${project.slug.current}/`}>
-              {/* <h3 class="p-project__list-item-title">{project.title}</h3> */}
               {project.thumbnail && (
                 <img
                   class="p-project__list-item-thumb"
@@ -119,44 +118,6 @@ const introTextures = [...projects, ...animations]
         ))}
       </ul>
     </div>
-  </section>
-  <section class="p-about">
-    <h2 class="p-about__title p-project__title">About</h2>
-    <div class="p-about__content">
-      <div class="p-about__content-inner">
-        <h3 class="p-about__name">
-          <span class="p-about__name-en">Yusuke Namikawa</span>
-          <span class="p-about__name-ja">並河祐輔</span>
-        </h3>
-        <p class="p-about__profile">
-          大学卒業後、社会福祉士として経験を詰んだ後
-          2021年10月より制作会社にてwebエンジニアになる.
-          得意なこと・できること：jsやcssを用いたアニメーション、インタラクション、マークアップ
-        </p>
-      </div>
-      <div class="footer-sns">
-        <ul class="footer-sns-list">
-          <li>
-            <a href="https://twitter.com/namikawa_yusuke" target="_blank" rel="noopener noreferrer">
-              X
-            </a>
-          </li>
-          <li>
-            <a href="https://www.instagram.com/namikawa_yusuke/" target="_blank" rel="noopener noreferrer">
-              Codepen
-            </a>
-          </li>
-          <li>
-            <a href="https://www.linkedin.com/in/namikawa-yusuke/" target="_blank" rel="noopener noreferrer">
-              Contact
-            </a>
-          </li>
-        </ul>
-      </div>
-    </div>
-<div class="p-footer__copyright">
-  <p>@2026 Yusuke Namikawa</p>
-</div>
   </section>
 </Layout>
 <style>
@@ -259,6 +220,19 @@ const introTextures = [...projects, ...animations]
     height: calc((var(--p-animation-count) + 1) * 80svh);
   }
 
+  /* Projects へのクロスフェード用の重なり。
+     Animation 側に 1 画面ぶん足し、Projects 側を同じだけ引き上げて
+     100svh の遷移区間を作る（Animation の sticky はこの区間中も効いている）。
+     区間中の opacity と Projects ステージの固定は section-crossfade.js が
+     毎フレーム駆動し、フェード完了と同時に通常フローへ着地する */
+  .p-animation.is-webgl:has(+ .p-project.is-webgl) {
+    height: calc((var(--p-animation-count) + 1) * 80svh + 100svh);
+  }
+
+  .p-animation.is-webgl + .p-project.is-webgl {
+    margin-top: -100svh;
+  }
+
   .p-animation__title {
     color: #fff;
     font-family: var(--ff-mincho);
@@ -270,6 +244,8 @@ const introTextures = [...projects, ...animations]
     top: 0;
     height: 100svh;
     background-color: transparent;
+    /* クロスフェード中は section-crossfade.js が毎フレーム opacity を書く */
+    will-change: opacity;
   }
 
   .p-animation__canvas {
@@ -381,6 +357,8 @@ const introTextures = [...projects, ...animations]
     position: relative;
     height: 100svh;
     background-color: transparent;
+    /* クロスフェード中は section-crossfade.js が毎フレーム transform / opacity を書く */
+    will-change: transform, opacity;
   }
 
   .p-project__canvas {
