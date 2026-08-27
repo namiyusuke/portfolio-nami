@@ -58,6 +58,7 @@
     "@yu_nami/oxlint-config": "^0.0.2",
     "@yu_nami/stylelint-config": "^0.0.4",
     "install": "^0.13.0",
+    "lil-gui": "^0.21.0",
     "markuplint": "^4.18.3",
     "oxfmt": "^0.55.0",
     "oxlint": "^1.70.0",

@@ -50,8 +50,8 @@ const ENTER_DELAY = 0.2; // 退場が始まってから次の板が入り始め�
 // 入退場のめくれ(hero-intro の vertex.glsl の自動再生と同じ動き)。
 // デモは p を等速で回し、uFlip = p / uAngle = p×0.25 / uBend = sin(pπ)×0.35 で駆動している
 const FLIP_AXIS = [1.6, 1.0, 0.5]; // めくれ本体の斜め回転軸
-const FLIP_SPIN = Math.PI; // スピン量。uAngle×π×4 に uAngle = p×0.25 を入れた値(約半回転)
-const FLIP_BEND = 0.11; // 湾曲の強さ。デモの uBend 最大 0.35 を板の高さ(3.2 → 1)に換算
+const FLIP_SPIN = 0.65; // スピン量。uAngle×π×4 に uAngle = p×0.25 を入れた値(約半回転)
+const FLIP_BEND = 0.125; // 湾曲の強さ。デモの uBend 最大 0.35 を板の高さ(3.2 → 1)に換算
 const OFFSCREEN_MARGIN = 1.1; // 板を画面外に置くときの余裕(1 = 画面端ぴったり)
 const FOLD_DURATION = 2.4; // 折りたたみ / 展開にかける時間(秒)
 
@@ -124,6 +124,16 @@ export default class ProjectFold {
     this.exitTweens = [];
     this.exitResolvers = [];
     this.time = 0;
+    // 入れ替えの timeline が走っている間 true(GUI の「今すぐ入れ替え」の二重起動よけ)
+    this.swapping = false;
+    // GUI から触る時間まわりの調整値。playSwap が毎回読むので次のサイクルから効く
+    this.params = {
+      hold: SWAP_HOLD,
+      fade: SWAP_FADE,
+      exitDuration: EXIT_DURATION,
+      enterDuration: ENTER_DURATION,
+      enterDelay: ENTER_DELAY,
+    };
     // ホバーの狙い値。uniform 側はこれをフレームごとに追いかける
     this.hoverUv = new THREE.Vector2(0.5, 0.5);
     this.hoverTarget = 0;
@@ -140,6 +150,10 @@ export default class ProjectFold {
       textOpacity: uniform(TEXT_OPACITY),
       hoverUv: uniform(new THREE.Vector2(0.5, 0.5)), // ホバー中の位置(板の UV)
       hoverStrength: uniform(0), // 0 = 触っていない / 1 = ホバー中
+      // 入退場のめくれの見た目。GUI から実行中に触れるよう uniform で持つ
+      flipSpin: uniform(FLIP_SPIN),
+      flipBend: uniform(FLIP_BEND),
+      flipAxis: uniform(new THREE.Vector3(...FLIP_AXIS)),
     };
   }
 
@@ -187,6 +201,7 @@ export default class ProjectFold {
     window.addEventListener("resize", this.onResize);
     this.setupPointer();
     this.scheduleSwap();
+    this.setupGui();
 
     // 詳細ページへの遷移は、この板の折りたたみを退場演出として使う
     this.pageExit = this.handlePageExit.bind(this);
@@ -198,7 +213,7 @@ export default class ProjectFold {
   }
 
   addObjects() {
-    const { progress, plateAspect, hoverUv, hoverStrength, leave, enter } = this.uniforms;
+    const { progress, plateAspect, hoverUv, hoverStrength, leave, enter, flipSpin, flipBend, flipAxis } = this.uniforms;
     // 巡回のたびに value を差し替えるので、ノードの実体を持っておく
     this.plateTex = texture(this.textures[0]);
     this.exitTex = texture(this.textures[0]);
@@ -221,15 +236,15 @@ export default class ProjectFold {
     const flipDeform = (pos, t) => {
       // 両方の edge に uv.x を混ぜることで、左端から右端へ時間差でめくれる
       const flipProgress = smoothstep(uv().x.mul(0.4), uv().x.mul(0.2).add(0.8), t);
-      const spin = t.mul(FLIP_SPIN);
+      const spin = t.mul(flipSpin);
       // Z 軸まわり = 画面内でのスピン
       pos.assign(rotateAround(pos, vec3(0, 0, 1), spin));
       // 斜め軸まわり = めくれ本体(最大 180°) + 上と同じスピン量を合成
-      pos.assign(rotateAround(pos, vec3(...FLIP_AXIS), flipProgress.mul(Math.PI).add(spin)));
+      pos.assign(rotateAround(pos, flipAxis, flipProgress.mul(Math.PI).add(spin)));
       // 上辺 0 → 下辺 -1 の垂れ下がり。回転「後」に足すので、板の向きに関係なく奥行き方向へ反る。
       // 強さはデモと同じ sin(t×π) の釣鐘型 = めくれの途中で最も反り、両端では平ら
       const sag = uv().y.negate().mul(uv().y.sub(2)).sub(1); // quadraticOut(uv.y) - 1
-      pos.z.addAssign(sag.mul(sin(t.mul(Math.PI)).mul(FLIP_BEND)).mul(6));
+      pos.z.addAssign(sag.mul(sin(t.mul(Math.PI)).mul(flipBend)).mul(6));
     };
 
     // 板の形はテクスチャの比率そのものなので、UV はそのまま貼れば切り取りなしで収まる
@@ -359,12 +374,14 @@ export default class ProjectFold {
       return;
     }
 
-    this.cycle = gsap.delayedCall(SWAP_HOLD, () => this.playSwap());
+    this.cycle = gsap.delayedCall(this.params.hold, () => this.playSwap());
   }
 
   // 入れ替え本体。今の板が退場用の板としてめくれを巻き上げながら真上へ抜けていき、
   // 次の絵に差し替えた本体の板が真下から同じめくれをほどきながら中央へ昇ってくる
   playSwap() {
+    this.swapping = true;
+    const { fade, exitDuration, enterDuration, enterDelay } = this.params;
     const next = (this.current + 1) % this.textures.length;
     const view = this.getViewSize(this.camera.position.z);
 
@@ -384,11 +401,12 @@ export default class ProjectFold {
     this.plateTex.value = this.textures[next];
     this.applyPlateScale();
     const halfDiagonal = Math.hypot(this.mesh.scale.x, this.mesh.scale.y) / 2;
-    this.mesh.position.set(0, -(view.height / 2 + halfDiagonal) * OFFSCREEN_MARGIN, 0);
+    this.mesh.position.set((view.width / 2 + halfDiagonal) * OFFSCREEN_MARGIN, -(view.height / 2 + halfDiagonal) * OFFSCREEN_MARGIN, 0);
     this.uniforms.enter.value = 1; // めくれて回った状態から入り、着地でほどける
 
     const tl = gsap.timeline({
       onComplete: () => {
+        this.swapping = false;
         this.exitMesh.visible = false;
         this.uniforms.leave.value = 0;
         this.uniforms.enter.value = 0;
@@ -405,7 +423,7 @@ export default class ProjectFold {
       this.uniforms.texMix,
       {
         value: 1,
-        duration: SWAP_FADE,
+        duration: fade,
         ease: "power2.inOut",
         onUpdate: () => this.syncItems(),
       },
@@ -413,12 +431,13 @@ export default class ProjectFold {
     );
 
     // 退場: 入場と同じめくれを巻き上げながら、真上へ抜けていく
-    tl.to(this.uniforms.leave, { value: 1, duration: EXIT_DURATION, ease: "none" }, 0);
+    tl.to(this.uniforms.leave, { value: 1, duration: exitDuration, ease: "none" }, 0);
     tl.to(
       this.exitMesh.position,
       {
         y: (view.height / 2 + exitHalfDiagonal) * OFFSCREEN_MARGIN,
-        duration: EXIT_DURATION,
+        x:-(view.width / 2 + exitHalfDiagonal) * OFFSCREEN_MARGIN,
+        duration: exitDuration,
         ease: "power3.in",
       },
       0,
@@ -427,10 +446,55 @@ export default class ProjectFold {
     // 入場: 真下から、めくれとスピンをほどきながら中央へ昇ってくる。
     // デモの自動再生は p を等速で回している(表情は smoothstep と sin が作る)ので、
     // enter にイージングは掛けない
-    tl.to(this.mesh.position, { y: 0, duration: ENTER_DURATION, ease: "power3.out" }, ENTER_DELAY);
-    tl.to(this.uniforms.enter, { value: 0, duration: ENTER_DURATION, ease: "power3.out" }, ENTER_DELAY);
+    tl.to(this.mesh.position, {
+       y: 0, duration: enterDuration, ease: "power3.out",
+       x: 0, duration: enterDuration, ease: "power3.out"
+      }, enterDelay);
+    tl.to(this.uniforms.enter, { value: 0, duration: enterDuration, ease: "power3.out" }, enterDelay);
 
     this.cycle = tl;
+  }
+
+  // 入れ替え演出の調整パネル(開発ビルドのみ)。
+  // 時間まわりは params 経由なので次のサイクルから、めくれは uniform なので即座に効く
+  async setupGui() {
+    if (!import.meta.env.DEV) {
+      return;
+    }
+
+    const { default: GUI } = await import("lil-gui");
+    if (this.disposed) {
+      return;
+    }
+
+    const { flipSpin, flipBend, flipAxis } = this.uniforms;
+    this.gui = new GUI({ title: "project swap" });
+
+    const timing = this.gui.addFolder("timing");
+    timing.add(this.params, "hold", 0, 8, 0.1).name("待ち時間");
+    timing.add(this.params, "fade", 0.1, 3, 0.05).name("クロスフェード");
+    timing.add(this.params, "exitDuration", 0.2, 4, 0.05).name("退場");
+    timing.add(this.params, "enterDuration", 0.2, 4, 0.05).name("入場");
+    timing.add(this.params, "enterDelay", 0, 2, 0.05).name("入場の遅れ");
+
+    const flip = this.gui.addFolder("flip");
+    flip.add(flipSpin, "value", 0, Math.PI * 2, 0.01).name("スピン");
+    flip.add(flipBend, "value", 0, 0.5, 0.005).name("湾曲");
+    flip.add(flipAxis.value, "x", -2, 2, 0.05).name("軸 X");
+    flip.add(flipAxis.value, "y", -2, 2, 0.05).name("軸 Y");
+    flip.add(flipAxis.value, "z", -2, 2, 0.05).name("軸 Z");
+
+    this.gui.add({ swap: () => this.swapNow() }, "swap").name("今すぐ入れ替え");
+  }
+
+  // GUI 用。待ち時間を飛ばしてすぐ入れ替えを始める
+  swapNow() {
+    if (this.swapping || this.folded || this.textures.length < 2) {
+      return;
+    }
+
+    this.cycle?.kill();
+    this.playSwap();
   }
 
   // メッシュ自体をクリックしたときだけ反応する。
@@ -797,6 +861,7 @@ export default class ProjectFold {
     document.documentElement.classList.remove(HERO_HANDOFF_CLASS);
     this.unlockStage();
 
+    this.gui?.destroy();
     clearTimeout(this.landTimer);
     this.cycle?.kill();
     for (const tween of this.exitTweens) {
