@@ -17,8 +17,8 @@ import heroIntroText from "@src/assets/images/hero-intro-text.svg";
 import headingProject from "@src/assets/images/heading-project.svg";
 // Sanity から project 一覧を取得
 import { getProjects, getAnimations, imageAspectRatio, urlFor } from "@src/libs/sanity";
-const animations = await getAnimations(10);
-const projects = await getProjects(10);
+const animations = await getAnimations();
+const projects = await getProjects();
 console.log(projects);
 
 // イントロで奥へ流すカードのテクスチャ。project / animation のサムネから最大10枚。

@@ -112,10 +112,9 @@ const ANIMATION_FIELDS = `
 const BY_ORDER_RANK = `order(coalesce(orderRank, "zzzzzz") asc)`;
 
 // 一覧取得（slug 未設定の下書きは除外し、管理画面で並べた順）
-export const getProjects = async (limit = 10): Promise<Project[]> =>
+export const getProjects = async (): Promise<Project[]> =>
   await sanityClient.fetch<Project[]>(
-    `*[_type == "project" && defined(slug.current)]|${BY_ORDER_RANK}[0...$limit]{${PROJECT_FIELDS}}`,
-    { limit },
+    `*[_type == "project" && defined(slug.current)]|${BY_ORDER_RANK}{${PROJECT_FIELDS}}`,
   );
 
 // 詳細取得（該当なしは null）
@@ -125,10 +124,9 @@ export const getProject = async (slug: string): Promise<Project | null> =>
   });
 
 // 一覧取得（slug 未設定の下書きは除外し、管理画面で並べた順）
-export const getAnimations = async (limit = 10): Promise<Animation[]> =>
+export const getAnimations = async (): Promise<Animation[]> =>
   await sanityClient.fetch<Animation[]>(
-    `*[_type == "animation" && defined(slug.current)]|${BY_ORDER_RANK}[0...$limit]{${ANIMATION_FIELDS}}`,
-    { limit },
+    `*[_type == "animation" && defined(slug.current)]|${BY_ORDER_RANK}{${ANIMATION_FIELDS}}`,
   );
 
 // 詳細取得（該当なしは null）
