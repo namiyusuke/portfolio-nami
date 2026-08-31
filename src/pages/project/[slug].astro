@@ -88,11 +88,13 @@ const outlineHtml = project.outline?.length
           <h1 class="project__title">{project.title}</h1>
         </div>
            <div class="project__head-wrapper">
-            <ul class="project__image-list">
+            <ul class="project__image-list js-project-gallery">
 
               {project.images && project.images.map((image) => (
                 <li>
                   <img
+                    class="js-project-gallery-item"
+                    crossorigin="anonymous"
                     src={urlFor(image).width(1600).auto("format").url()}
                     width={image.dimensions.width}
                     height={image.dimensions.height}
@@ -137,7 +139,7 @@ const outlineHtml = project.outline?.length
             </section>
           </div>
       </div>
-    <div class="project__body">
+    <div class="project__body project__body--back">
       <p class="project__back">
         <a href={`${SITE.base}/`}>一覧に戻る</a>
       </p>
@@ -224,7 +226,7 @@ width: var(--p-project-hero-w);
   .project__body {
     width: calc(1196 / 1440 * 100%);
     margin-inline: auto;
-    padding-block: clamp(56px, 12vw, 120px);
+    padding-top: clamp(56px, 12vw, 120px);
   }
 
   .project__back {
@@ -248,6 +250,12 @@ width: var(--p-project-hero-w);
   }
   .project__image-list li + li {
     margin-top: clamp(2rem, 5vw, 4rem);
+  }
+
+  /* WebGL の板が描ける状態になった画像は DOM 側を隠す(レイアウトはそのまま残す)。
+     板は project-gallery.js が同じ矩形に描くので、見た目上は入れ替わるだけ */
+  .project__image-list img.is-webgl {
+    visibility: hidden;
   }
   .project-detail__ttl {
     margin-bottom: clamp(1.2rem, 4vw, 2.4rem);
@@ -331,5 +339,9 @@ width: var(--p-project-hero-w);
     width: 240px;
     flex-shrink: 0;
   }
+}
+.project__body--back{
+  padding-top: 0;
+  padding-bottom: clamp(56px, 12vw, 120px);
 }
 </style>

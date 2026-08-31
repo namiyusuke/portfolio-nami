@@ -7,6 +7,7 @@ import { initHeroTypography } from "./libs/hero-typography.js";
 import { initLenis, resetScroll } from "./libs/lenis.js";
 import Observer from "./libs/observer.js";
 import { initProjectFold } from "./libs/project-fold.js";
+import { initProjectGallery } from "./libs/project-gallery.js";
 import { initProjectHero } from "./libs/project-hero.js";
 import { initSectionCrossfade } from "./libs/section-crossfade.js";
 import { initNoteSwiper } from "./libs/swiper.js";
@@ -63,6 +64,8 @@ registerPageInit(() => {
   initSectionCrossfade();
   // 詳細ページのメイン画像を板と同じ矩形に合わせる(遷移演出の着地先になる)
   initProjectHero();
+  // 詳細ページの画像ギャラリー。下端が捲れた板をスクロールで平らに戻す
+  initProjectGallery();
 });
 
 initSwup();
