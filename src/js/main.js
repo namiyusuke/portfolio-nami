@@ -1,4 +1,5 @@
 import "swiper/css";
+import { initAboutFold } from "./libs/about-fold.js";
 import { initAnimationSlider } from "./libs/animation-slider.js";
 import { initHeaderWeather } from "./libs/header-weather.js";
 import { initHeroHolo } from "./libs/hero-holo.js";
@@ -17,6 +18,8 @@ initLenis();
 
 // ヘッダーは #swup の外にあり遷移時も保持されるため、初回に一度だけ更新する
 initHeaderWeather();
+// About オーバーレイ(紙めくり)もヘッダー同様 #swup の外なので初回に一度だけ配線する
+initAboutFold();
 
 registerPageTransition({
   initial,

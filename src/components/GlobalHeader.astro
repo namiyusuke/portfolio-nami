@@ -26,15 +26,23 @@ const navLists = [
     <ul class="header-nav-list">
       <li class="header-nav-item">
         <a href="#">
-          aaa
+          Top
         </a>
       </li>
       <li class="header-nav-item">
         <a href="#">
+          Animation
         </a>
       </li>
       <li class="header-nav-item">
         <a href="#">
+         Projects
+        </a>
+      </li>
+      <li class="header-nav-item">
+        <!-- JS が動かない環境では about ページへの素の遷移にフォールバックする -->
+        <a href="#" class="js-about-open">
+         About
         </a>
       </li>
     </ul>
@@ -42,6 +50,20 @@ const navLists = [
 </header>
 
 <style>
-
-
+  .header{
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 100%;
+    z-index: 1000;
+    color: #fff;
+    padding-inline:74px;
+    padding-block:40px;
+  }
+.header-nav-list{
+  display: flex;
+  gap: 26px;
+  justify-content: flex-end;
+  align-items: center;
+}
 </style>

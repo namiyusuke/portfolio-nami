@@ -640,7 +640,7 @@ body::before {
 .is-fadeOut .cover-bg:after {
   opacity: 0.77;
 }
-.header-nav {
+/* .header-nav {
   visibility: hidden;
   opacity: 0;
   transition:
@@ -650,7 +650,7 @@ body::before {
 .is-section .header-nav {
   visibility: visible;
   opacity: 1;
-}
+} */
 .p-project__title {
   font-family: var(--ff-mincho);
   font-weight: 400;
@@ -719,4 +719,154 @@ body::before {
   font-size: 13px;
   font-weight: 300;
   margin-bottom: 24px;
+}
+.logo__text{
+  display: none;
+}
+
+/* --------------------------------------------------------------
+ About オーバーレイ(紙めくり)
+ ヘッダーの About を押すと、project-fold と同じめくれの紙(WebGPU の板)が
+ 画面上から降りてきて中央に着地する。着地すると JS が .is-landed を付け、
+ 紙と同じ矩形に重ねた __paper の中身がフェードインする。
+ 紙の実寸は sketch 側が --about-paper-w / h に入れる。
+ WebGL 不可 / prefers-reduced-motion 時は .is-plain が付き、
+ __paper 自体が紙の見た目を持って CSS だけで出入りする。
+-------------------------------------------------------------- */
+.c-about-fold {
+  position: fixed;
+  inset: 0;
+  /* ヘッダー(z-index: 1000)より手前に敷く */
+  z-index: 1100;
+  visibility: hidden;
+  pointer-events: none;
+  /* フォールバック時の閉じフェードを見せ切ってから隠す */
+  transition: visibility 0s 0.5s;
+}
+.c-about-fold.is-open {
+  visibility: visible;
+  pointer-events: auto;
+  transition: visibility 0s;
+}
+.c-about-fold__canvas {
+  position: absolute;
+  inset: 0;
+}
+.c-about-fold__canvas canvas {
+  display: block;
+}
+/* 中身。WebGL の紙とまったく同じ矩形に重ねる(背景は持たない) */
+.c-about-fold__paper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  /* WebGL の紙と同じ傾き。角度は sketch 側が --about-paper-tilt に入れる */
+  rotate: var(--about-paper-tilt, 0rad);
+  width: var(--about-paper-w, min(720px, 60vw));
+  height: var(--about-paper-h, min(500px, 60svh));
+  display: grid;
+  align-content: center;
+  padding: clamp(20px, 3.5vw, 48px);
+  color: #1f1f1c;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  overflow: hidden;
+}
+.c-about-fold.is-landed .c-about-fold__paper {
+  opacity: 1;
+  pointer-events: auto;
+  /* 紙が着地しきってから、ひと呼吸おいて出す */
+  transition: opacity 0.5s ease 0.1s;
+}
+.c-about-fold__close {
+  position: absolute;
+  top: clamp(12px, 2.5vw, 28px);
+  right: clamp(12px, 2.5vw, 28px);
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  font-size: 28px;
+  line-height: 1;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.3s ease;
+}
+.c-about-fold__close:hover {
+  opacity: 0.5;
+}
+.c-about-fold__title {
+  font-family: var(--ff-mincho);
+  font-weight: 400;
+  font-size: clamp(20px, 3vw, 28px);
+  margin-bottom: clamp(20px, 4vw, 48px);
+}
+.c-about-fold__name {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-bottom: clamp(16px, 3vw, 32px);
+}
+.c-about-fold__name-en {
+  font-family: var(--ff-gothic);
+  font-weight: 400;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  line-height: 1;
+}
+.c-about-fold__name-ja {
+  font-weight: 400;
+  font-size: 1rem;
+}
+.c-about-fold__profile {
+  max-width: 40em;
+  font-weight: 300;
+  line-height: 2;
+}
+.c-about-fold__sns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 20px;
+  margin-top: clamp(24px, 4vw, 48px);
+}
+.c-about-fold__sns li a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(170px, 100%);
+  min-height: 45px;
+  font-weight: 300;
+  color: inherit;
+  border: 1px solid currentColor;
+  transition: opacity 0.3s ease;
+}
+.c-about-fold__sns li a:hover {
+  opacity: 0.5;
+}
+/* WebGL 不可 / prefers-reduced-motion のフォールバック。
+   __paper 自体を紙に見立てて、上からのスライド + フェードだけで出す */
+.c-about-fold.is-plain .c-about-fold__paper {
+  background: #f2efe7;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+  transform: translateY(-6vh);
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease;
+}
+.c-about-fold.is-plain.is-landed .c-about-fold__paper {
+  transform: translateY(0);
+  transition:
+    opacity 0.5s ease,
+    transform 0.5s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .c-about-fold.is-plain .c-about-fold__paper {
+    transform: none;
+    transition: opacity 0.3s ease;
+  }
 }

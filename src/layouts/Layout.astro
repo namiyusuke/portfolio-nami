@@ -56,6 +56,27 @@ const isProd = import.meta.env.PROD;
     <!-- (2) header / nav は #swup の外(遷移時に保持される) -->
     <GlobalHeader />
 
+    <!-- ヘッダーの About から開くオーバーレイ。ヘッダー同様 #swup の外で保持される。
+         紙(WebGPU の板)が降りて着地したら .is-landed が付き、__paper の中身が出る -->
+    <div class="c-about-fold js-about-overlay" aria-hidden="true">
+      <div class="c-about-fold__canvas js-about-canvas"></div>
+      <div class="c-about-fold__paper js-about-paper">
+        <button class="c-about-fold__close js-about-close" type="button" aria-label="閉じる">×</button>
+        <div class="c-about-fold__inner">
+          <h2 class="c-about-fold__title">About</h2>
+          <h3 class="c-about-fold__name">
+            <span class="c-about-fold__name-en">Yusuke Namikawa</span>
+            <span class="c-about-fold__name-ja">並河祐輔</span>
+          </h3>
+          <p class="c-about-fold__profile">
+            大学卒業後、社会福祉士として経験を詰んだ後
+            2021年10月より制作会社にてwebエンジニアになる.
+            得意なこと・できること：jsやcssを用いたアニメーション、インタラクション、マークアップ
+          </p>
+        </div>
+      </div>
+    </div>
+
     <!-- (3) ページごとに中身が変わる範囲を #swup で囲う -->
     <div id="swup" class="transition-fade">
       <slot />
