@@ -37,10 +37,10 @@ const ENTER_DIAGONAL = 0.6;
 const ENTER_TILT = 0.14;
 
 // 紙の目標幅(px)と比率。縦横は画面の向きで切り替える
-const PAPER_WIDTH = 720;
+const PAPER_WIDTH = 900;
 // 画面に対して紙が占める最大比率(まわりのページが見えるよう控えめにする)
 const PAPER_FIT = 0.6;
-const ASPECT_WIDE = 1.45;
+const ASPECT_WIDE = 1.5;
 const ASPECT_TALL = 0.72;
 
 // About オーバーレイの紙。

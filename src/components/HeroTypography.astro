@@ -49,6 +49,8 @@
     place-items: center;
     height: 100svh;
     padding-inline: var(--offset-inline);
+    /* MV → Animation のクロスフェード中は section-crossfade.js が毎フレーム opacity を書く */
+    will-change: opacity;
   }
 
   .p-hero__typography-svg {

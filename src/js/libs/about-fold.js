@@ -80,7 +80,9 @@ export const initAboutFold = () => {
 
   for (const opener of openers) {
     opener.addEventListener("click", (event) => {
-      // Swup(リンク遷移)に渡さない。preventDefault 済みのクリックは Swup が無視する
+      // href="#" の素のジャンプ(ページ先頭へ)を止める。
+      // Swup は preventDefault を見ずに document でクリックを拾うので、
+      // Swup 側はリンクの data-no-swup 属性で無視させる
       event.preventDefault();
       open();
     });

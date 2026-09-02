@@ -757,14 +757,17 @@ body::before {
 }
 /* 中身。WebGL の紙とまったく同じ矩形に重ねる(背景は持たない) */
 .c-about-fold__paper {
+  background-image: url('../assets/images/about-noize.png');
+  background-size: cover;
+  background-repeat: repeat;
   position: absolute;
   top: 50%;
   left: 50%;
   translate: -50% -50%;
   /* WebGL の紙と同じ傾き。角度は sketch 側が --about-paper-tilt に入れる */
   rotate: var(--about-paper-tilt, 0rad);
-  width: var(--about-paper-w, min(720px, 60vw));
-  height: var(--about-paper-h, min(500px, 60svh));
+  width: var(--about-paper-w, min(900px, calc(900 / 1440 * 100vw)));
+  height: var(--about-paper-h, min(600px, calc(600 / 1440 * 100vw)));
   display: grid;
   align-content: center;
   padding: clamp(20px, 3.5vw, 48px);
@@ -802,16 +805,27 @@ body::before {
 }
 .c-about-fold__title {
   font-family: var(--ff-mincho);
+  color: #3C6754;
   font-weight: 400;
-  font-size: clamp(20px, 3vw, 28px);
+  font-size: 40px;
   margin-bottom: clamp(20px, 4vw, 48px);
+  line-height: 1;
+}
+@media (min-width: 767px) {
+.c-about-fold__title {
+  font-family: var(--ff-mincho);
+  color: #3C6754;
+  font-weight: 400;
+  font-size: clamp(20px, calc(128 / 1440 * 100vw), 128px);
+  margin-bottom: clamp(20px, 4vw, 48px);
+}
 }
 .c-about-fold__name {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
   gap: 8px 20px;
-  margin-bottom: clamp(16px, 3vw, 32px);
+  margin-bottom:1rem;
 }
 .c-about-fold__name-en {
   font-family: var(--ff-gothic);
@@ -826,19 +840,23 @@ body::before {
 .c-about-fold__profile {
   max-width: 40em;
   font-weight: 300;
-  line-height: 2;
+  line-height: 1.8;
+  font-size: clamp(14px, calc(16 / 1440 * 100vw),16px);
+}
+.c-about-fold__inner{
+  color: #3C6754;
 }
 .c-about-fold__sns {
   display: flex;
   flex-wrap: wrap;
   gap: 16px 20px;
-  margin-top: clamp(24px, 4vw, 48px);
+  margin-top: clamp(24px, 4vw, 40px);
 }
 .c-about-fold__sns li a {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: min(170px, 100%);
+  width: min(calc(170 / 1440 * 100vw),170px);
   min-height: 45px;
   font-weight: 300;
   color: inherit;
@@ -852,7 +870,6 @@ body::before {
    __paper 自体を紙に見立てて、上からのスライド + フェードだけで出す */
 .c-about-fold.is-plain .c-about-fold__paper {
   background: #f2efe7;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
   transform: translateY(-6vh);
   transition:
     opacity 0.5s ease,

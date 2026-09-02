@@ -25,23 +25,24 @@ const navLists = [
   <nav class="header-nav">
     <ul class="header-nav-list">
       <li class="header-nav-item">
-        <a href="#">
+        <a href={`${SITE.base}/`}>
           Top
         </a>
       </li>
       <li class="header-nav-item">
-        <a href="#">
+        <a href={`${SITE.base}/#animation`}>
           Animation
         </a>
       </li>
       <li class="header-nav-item">
-        <a href="#">
+        <a href={`${SITE.base}/#projects`}>
          Projects
         </a>
       </li>
       <li class="header-nav-item">
-        <!-- JS が動かない環境では about ページへの素の遷移にフォールバックする -->
-        <a href="#" class="js-about-open">
+        <!-- data-no-swup: Swup は preventDefault を見ないため、これが無いと
+             「現在ページへのリンク」扱いでページ先頭へスクロールされてしまう -->
+        <a href="#" class="js-about-open" data-no-swup>
          About
         </a>
       </li>

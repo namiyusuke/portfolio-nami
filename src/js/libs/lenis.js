@@ -32,3 +32,11 @@ export const resetScroll = () => {
     lenis.scrollTo(0, { immediate: true });
   }
 };
+
+// location.hash に対応する要素へスムーススクロールする。要素が無ければ何もしない
+export const scrollToHash = (hash) => {
+  const target = hash ? document.querySelector(hash) : null;
+  if (lenis && target) {
+    lenis.scrollTo(target);
+  }
+};

@@ -52,10 +52,13 @@ const introTextures = [...projects, ...animations]
     <HeroTypography />
   </section>
   <section
+    id="animation"
     class="p-animation js-animation-slider"
     style={`--p-animation-count:${animations.length}`}
   >
-    <h2 class="p-animation__title p-project__title">Animation</h2>
+    <!-- タイトルは固定しない(通常フローのままスクロールで流れる)。
+         MV からのクロスフェード中だけ section-crossfade.js が opacity を合わせる -->
+    <h2 class="p-animation__title p-project__title js-animation-title">Animation</h2>
     <div class="p-animation__stage js-animation-stage">
       <div class="p-animation__canvas js-animation-canvas" aria-hidden="true"></div>
       <ul class="p-animation__list">
@@ -88,7 +91,7 @@ const introTextures = [...projects, ...animations]
       </ul>
     </div>
   </section>
-  <section class="p-project js-project-fold">
+  <section id="projects" class="p-project js-project-fold">
     <div class="p-project__stage js-project-stage">
        <h2 class="p-project__title">projects</h2>
       <div class="p-project__canvas js-project-canvas" aria-hidden="true"></div>
@@ -220,6 +223,20 @@ const introTextures = [...projects, ...animations]
     height: calc((var(--p-animation-count) + 1) * 80svh);
   }
 
+  /* MV → Animation のクロスフェード用の重なり。
+     Hero 側に 1 画面ぶん足し、Animation 側を同じだけ引き上げて
+     100svh の遷移区間を作る（MV のタイポグラフィは sticky なのでこの区間中も
+     画面に留まったまま）。区間中の opacity と Animation ステージの固定は
+     section-crossfade.js が毎フレーム駆動し、フェード完了と同時に
+     Animation の sticky へそのまま着地する */
+  .p-hero:has(+ .p-animation.is-webgl) {
+    height: 200svh;
+  }
+
+  .p-hero + .p-animation.is-webgl {
+    margin-top: -100svh;
+  }
+
   /* Projects へのクロスフェード用の重なり。
      Animation 側に 1 画面ぶん足し、Projects 側を同じだけ引き上げて
      100svh の遷移区間を作る（Animation の sticky はこの区間中も効いている）。
@@ -236,6 +253,8 @@ const introTextures = [...projects, ...animations]
   .p-animation__title {
     color: #fff;
     font-family: var(--ff-mincho);
+    /* MV からのクロスフェード中は section-crossfade.js が毎フレーム opacity を書く */
+    will-change: opacity;
   }
 
   /* 板の縁は alpha で抜くので、背面はサイト共通の暗い背景を透かす */
