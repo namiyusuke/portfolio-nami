@@ -4,8 +4,6 @@ import * as THREE from "three";
 import fragmentShader from "./fragment.glsl?raw";
 import vertexShader from "./vertex.glsl?raw";
 
-// 螺旋(ヘリックス)の形。角度は進行度に比例して回り、
-// 半径は奥へいくほど絞ることで渦のように収束させる
 const RADIUS = 2.2;
 const TURNS = 1.25;
 const RADIUS_SHRINK = 0.72;
@@ -16,9 +14,6 @@ const BEND = 0.22;
 // 手前(カメラ近く)で現れて、奥へ消えるまでの区間
 const Z_START = 3.0;
 const Z_END = -26.0;
-// イントロ全体の長さ(秒)と、1枚のカードが旅に使う割合。
-// 残り(1 - CARD_SPAN)をカード間の時間差に均等配分するので、
-// 最後のカードがちょうど t=1 で奥に消える
 const DURATION = 4.2;
 const CARD_SPAN = 0.55;
 
@@ -140,8 +135,6 @@ export default class HeroIntro {
       });
     });
   }
-
-  // destroy からも呼ぶので、待っている側が宙吊りにならないよう一度だけ解決する
   finish() {
     if (this.resolvePlay) {
       this.resolvePlay();

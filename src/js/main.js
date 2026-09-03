@@ -4,6 +4,7 @@ import { initAnimationSlider } from "./libs/animation-slider.js";
 import { initHeaderWeather } from "./libs/header-weather.js";
 import { initHeroHolo } from "./libs/hero-holo.js";
 import { initHeroIntro } from "./libs/hero-intro.js";
+import { initHeroSnap } from "./libs/hero-snap.js";
 import { initHeroTypography } from "./libs/hero-typography.js";
 import { initAnchorScroll } from "./libs/anchor-scroll.js";
 import { initLenis, resetScroll, scrollToHash } from "./libs/lenis.js";
@@ -56,21 +57,14 @@ registerPageInit(() => {
     true,
     true,
   );
-  // ページごとに動かす関数はすべてこの中で呼ぶ。
-  // Swup遷移後はDOMが差し替わるため、ここに登録しないと2ページ目以降で動かなくなる。
   initNoteSwiper();
-  // 前ページのインスタンス破棄も関数内で行うため、遷移のたびに呼んでよい
-  // イントロ(カードが奥へ流れて FV が現れる)は初回表示のときだけ再生される
   initHeroIntro();
-  // FV のタイポグラフィ。初回はイントロ(hero-intro)の終了を待って再生される
   initHeroTypography();
   initHeroHolo();
   initAnimationSlider();
   initProjectFold();
-  // Animation → Projects のクロスフェード。
-  // 両 init が同期的に付ける is-webgl を見るので、この順で呼ぶ
   initSectionCrossfade();
-  // 詳細ページのメイン画像を板と同じ矩形に合わせる(遷移演出の着地先になる)
+  initHeroSnap();
   initProjectHero();
   // 詳細ページの画像ギャラリー。下端が捲れた板をスクロールで平らに戻す
   initProjectGallery();

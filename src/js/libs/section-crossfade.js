@@ -3,10 +3,8 @@ import gsap from "gsap";
 // MV(Hero) → Animation → Projects のセクション間クロスフェード。
 // CSS 側(index.astro)で隣り合うセクションを 100svh ずつ重ねてあり、その区間で
 // 手前の要素を 1→0、次のセクションのステージを 0→1 に振る。
-// 次のステージはフェード中 translateY でビューポート上端に留めて、
-// 下から流れ込む動きを消し「同じ位置」でフェードインさせる。
-// セクション上端がビューポート上端に達すると transform が外れ、
-// ちょうど通常フローの位置に着地して以降は普通のスクロールに戻る。
+// 位置には触らない(固定しない)ので、次のセクションは通常のスクロールで
+// 下から流れ込みながらフェードインする。
 
 let tick = null;
 let targets = null;
@@ -68,11 +66,6 @@ export const initSectionCrossfade = () => {
       const top = animation.getBoundingClientRect().top;
       enterFade = clamp01(1 - top / vh);
 
-      // フェード区間中だけ Animation ステージをビューポート上端に固定する。
-      // 区間が終わると transform が外れ、そのまま sticky(通常フロー)へ着地する
-      const pinned = top > 0 && top < vh;
-      animationStage.style.transform = pinned ? `translateY(${-top}px)` : "";
-
       // タイトルはスクロールで流れたまま、透明度だけステージと同じ曲線で上げる
       if (animationTitle) {
         animationTitle.style.opacity = enterFade < 1 ? String(enterFade) : "";
@@ -90,9 +83,6 @@ export const initSectionCrossfade = () => {
       const top = project.getBoundingClientRect().top;
       exitFade = clamp01(1 - top / vh);
 
-      // フェード区間中だけビューポート上端に固定する
-      const pinned = top > 0 && top < vh;
-      projectStage.style.transform = pinned ? `translateY(${-top}px)` : "";
       projectStage.style.opacity = exitFade < 1 ? String(exitFade) : "";
       // 透明なあいだはリンクの当たり判定ごと消しておく
       projectStage.style.visibility = exitFade === 0 ? "hidden" : "";

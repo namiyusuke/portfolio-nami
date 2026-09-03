@@ -56,10 +56,20 @@ const navLists = [
     top: 0;
     right: 0;
     width: 100%;
-    z-index: 1000;
+    z-index: 1;
     color: #fff;
     padding-inline:74px;
     padding-block:40px;
+    /* イントロのキャンバスは背景を透かすため、z-index では隠しきれない。
+       イントロが終わる(hero-intro.js が html に is-intro-done を付ける)までは
+       ヘッダー自体を隠しておく。イントロが無いページでは即付く */
+    visibility: hidden;
+    opacity: 0;
+  }
+  :global(html.is-intro-done) .header {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity 0.8s var(--ease-out-cubic);
   }
 .header-nav-list{
   display: flex;

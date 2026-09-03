@@ -26,10 +26,13 @@ export const initLenis = () => {
 
 export const getLenis = () => lenis;
 
-// Swup遷移時にスクロール位置を先頭へ戻す(即時)
+// Swup遷移時にスクロール位置を先頭へ戻す(即時)。
+// スナップ搬送(lock)や stop() 中でも Lenis の scrollTo は force なしだと
+// 黙って無視されるため必ず force を付ける。immediate の内部 reset() が
+// 走りかけの搬送アニメとロックも一緒に破棄してくれる
 export const resetScroll = () => {
   if (lenis) {
-    lenis.scrollTo(0, { immediate: true });
+    lenis.scrollTo(0, { immediate: true, force: true });
   }
 };
 

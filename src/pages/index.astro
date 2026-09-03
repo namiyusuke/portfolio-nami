@@ -29,8 +29,6 @@ const introTextures = [...projects, ...animations]
   .map((thumbnail) =>
     urlFor(thumbnail).width(768).height(1024).fit("crop").auto("format").url()
   );
-// note の RSS から記事(タイトル・サムネイル・URL)を取得
-// const notePosts = await getNotePosts(10);
 ---
 
 <Layout title={`ページタイトル | ${SITE.name}`} description="ページの紹介文">
@@ -124,30 +122,20 @@ const introTextures = [...projects, ...animations]
   </section>
 </Layout>
 <style>
-  /* --------------------------------------------------------------
-   FV
-   既定は背景だけ。WebGL が使えて prefers-reduced-motion でもない場合だけ
-   JS が .is-webgl を付けてキャンバスを立てる。
-   モデルの読み込みが終わったら .is-ready でフェードインさせる。
-  -------------------------------------------------------------- */
   .p-hero {
     position: relative;
     inset: 0;
     height: 100svh;
+    z-index: 100;
   }
-
-  /* --------------------------------------------------------------
-   イントロ(カードが螺旋を描いて奥へ流れる)
-   既定は非表示。WebGL が使えて初回表示のときだけ JS が .is-webgl を付けて再生し、
-   終わったら .is-done でフェードアウトして背後の FV を見せる。
-  -------------------------------------------------------------- */
   .p-hero__intro {
     position: fixed;
     inset: 0;
     z-index: 100;
-    display: none;
-    /* 再生中もスクロールやクリックは奪わない */
+    display: block;
     pointer-events: none;
+    background: linear-gradient(162.93deg, rgb(60 103 84 / 0.7) 1.34%, rgb(60 103 84 / 0) 91.32%);
+    transition: opacity 0.8s, visibility 0.8s ;
   }
 
   .p-hero__intro.is-webgl {
@@ -156,37 +144,28 @@ const introTextures = [...projects, ...animations]
 
   .p-hero__intro.is-done {
     opacity: 0;
-    transition: opacity 0.8s var(--ease-out-cubic);
+    visibility: hidden;
   }
 
   .p-hero__intro-canvas {
     position: absolute;
     inset: 0;
+    z-index: 100;
   }
 
   /* renderer が差し込む canvas はスコープ外なので :global で拾う */
   .p-hero__intro-canvas :global(canvas) {
     display: block;
   }
-
-  /* 全身 → 上半身へ寄せるためのスクロール区間。
-     1画面ぶん余分に確保し、はみ出た量を 0〜1 に正規化してカメラを動かす。
-     ここを 300svh にすればもっとゆっくり寄る。 */
   .p-hero.is-webgl {
     height: 200svh;
   }
-
-  /* モデルの縁は alpha で抜くので、背面はサイト共通の背景
-     (body::before のグラデーション)を透かす。
-     body::before と同じ z-index: -1 のまま不透明色を敷くと、
-     DOM 順でこちらが手前に来てグラデーションを覆ってしまう。 */
   .p-hero__stage {
     position: fixed;
     inset: 0;
     z-index: -1;
     background-color: transparent;
   }
-
   .p-hero__canvas {
     display: none;
   }
@@ -222,13 +201,6 @@ const introTextures = [...projects, ...animations]
   .p-animation.is-webgl {
     height: calc((var(--p-animation-count) + 1) * 80svh);
   }
-
-  /* MV → Animation のクロスフェード用の重なり。
-     Hero 側に 1 画面ぶん足し、Animation 側を同じだけ引き上げて
-     100svh の遷移区間を作る（MV のタイポグラフィは sticky なのでこの区間中も
-     画面に留まったまま）。区間中の opacity と Animation ステージの固定は
-     section-crossfade.js が毎フレーム駆動し、フェード完了と同時に
-     Animation の sticky へそのまま着地する */
   .p-hero:has(+ .p-animation.is-webgl) {
     height: 200svh;
   }
@@ -236,12 +208,6 @@ const introTextures = [...projects, ...animations]
   .p-hero + .p-animation.is-webgl {
     margin-top: -100svh;
   }
-
-  /* Projects へのクロスフェード用の重なり。
-     Animation 側に 1 画面ぶん足し、Projects 側を同じだけ引き上げて
-     100svh の遷移区間を作る（Animation の sticky はこの区間中も効いている）。
-     区間中の opacity と Projects ステージの固定は section-crossfade.js が
-     毎フレーム駆動し、フェード完了と同時に通常フローへ着地する */
   .p-animation.is-webgl:has(+ .p-project.is-webgl) {
     height: calc((var(--p-animation-count) + 1) * 80svh + 100svh);
   }
@@ -249,11 +215,9 @@ const introTextures = [...projects, ...animations]
   .p-animation.is-webgl + .p-project.is-webgl {
     margin-top: -100svh;
   }
-
   .p-animation__title {
     color: #fff;
     font-family: var(--ff-mincho);
-    /* MV からのクロスフェード中は section-crossfade.js が毎フレーム opacity を書く */
     will-change: opacity;
   }
 
@@ -291,11 +255,8 @@ const introTextures = [...projects, ...animations]
     perspective: 800px;
   }
 
-  /* 全項目を同じセルに重ね、GSAP が rotationX で円筒状に回す */
   .is-webgl .p-animation__list-item {
     grid-area: 1 / 1;
-    /* place-items: center は max-content 幅になるので、
-       長いタイトルが画面外へ出ないよう上限を切っておく */
     max-width: 100%;
     backface-visibility: hidden;
   }
@@ -305,7 +266,6 @@ const introTextures = [...projects, ...animations]
     font-family: var(--ff-mincho);
     font-size: clamp(24px, calc(48 / 1440 * 100vw), 48px);
     text-align: center;
-    /* SP は 1行に収まらないので折り返す(md 以上は元どおり nowrap) */
     padding-inline: var(--offset-inline);
     text-wrap: balance;
   }
@@ -376,8 +336,8 @@ const introTextures = [...projects, ...animations]
     position: relative;
     height: 100svh;
     background-color: transparent;
-    /* クロスフェード中は section-crossfade.js が毎フレーム transform / opacity を書く */
-    will-change: transform, opacity;
+    /* クロスフェード中は section-crossfade.js が毎フレーム opacity を書く */
+    will-change: opacity;
   }
 
   .p-project__canvas {
