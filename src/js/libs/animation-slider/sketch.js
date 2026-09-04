@@ -1,6 +1,7 @@
 import gsap from "gsap";
 import * as THREE from "three";
 
+import { rendererQuality } from "../render-quality.js";
 import fragmentShader from "./fragment.glsl?raw";
 import vertexShader from "./vertex.glsl?raw";
 
@@ -10,9 +11,10 @@ const UNITS_PER_SLIDE = 2;
 // タイトル（DOM）を1枚ぶん送ったときの X 軸回転量。
 // 小さいほど円筒の半径が詰まり、タイトル同士の間隔も狭くなる。
 const ROTATION_ANGLE = 32;
-// この角度まで回ったタイトルは完全に透明。1枚ぶん（ROTATION_ANGLE）より
-// 手前に置いて、隣に届く前に消えるようにする。
-const FADE_ANGLE = 22;
+// この角度まで回ったタイトルは完全に透明。隣り合う2枚は常に
+// ROTATION_ANGLE ぶん離れているので、その半分にすると
+// ちょうど中間地点で入れ替わり、2枚が同時に見えることがない。
+const FADE_ANGLE = ROTATION_ANGLE / 2;
 // 中央からこの距離を超えた板は描画しない
 const CULL_DISTANCE = UNITS_PER_SLIDE * 1.5;
 // 板の素の横幅（PlaneGeometry の width と同じ値）
@@ -37,8 +39,9 @@ export default class AnimationSlider {
     this.width = container.offsetWidth;
     this.height = container.offsetHeight;
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const quality = rendererQuality();
+    this.renderer = new THREE.WebGLRenderer({ antialias: quality.antialias, alpha: true });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.pixelRatio));
     this.renderer.setSize(this.width, this.height);
     // ページ背景を透かすので塗り潰さない
     this.renderer.setClearAlpha(0);
@@ -82,10 +85,11 @@ export default class AnimationSlider {
           duration: 1,
           ease: "none",
           onUpdate: () => {
-            // センター(0°)で 1、FADE_ANGLE まで回ったら 0
+            // センター(0°)で 1、FADE_ANGLE まで回ったら 0。
+            // 3乗にして、フェード幅が狭くてもセンター付近は濃いまま残す
             const rotation = gsap.getProperty(item, "rotationX");
             const distance = Math.min(Math.abs(rotation) / FADE_ANGLE, 1);
-            item.style.opacity = 1 - distance;
+            item.style.opacity = 1 - distance ** 3;
           },
         },
         "<",

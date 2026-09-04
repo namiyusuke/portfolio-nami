@@ -22,7 +22,7 @@ export const initHeroSnap = () => {
   destroyHeroSnap();
 
   // スナップが要るのはクロスフェードの重なり区間があるとき(=WebGL 表示)だけ
-  const hero = document.querySelector(".js-hero-holo");
+  const hero = document.querySelector(".js-hero");
   const animation = document.querySelector(".js-animation-slider.is-webgl");
   if (!hero || !animation) {
     return;

@@ -44,7 +44,7 @@ export const initSectionCrossfade = () => {
   }
 
   // MV → Animation。タイポグラフィは sticky なので、消えるまで画面に留まっている
-  const heroTypography = document.querySelector(".js-hero-holo .js-hero-typography");
+  const heroTypography = document.querySelector(".js-hero .js-hero-typography");
   // タイトルは固定しない方針なので opacity だけ合わせる(位置は通常フローのまま)
   const animationTitle = animation.querySelector(".js-animation-title");
 

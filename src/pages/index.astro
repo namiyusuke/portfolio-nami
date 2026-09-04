@@ -33,7 +33,7 @@ const introTextures = [...projects, ...animations]
 
 <Layout title={`ページタイトル | ${SITE.name}`} description="ページの紹介文">
 
-  <section class="p-hero js-hero-holo">
+  <section class="p-hero js-hero">
     <!-- 初回表示だけ再生するイントロ。カードが螺旋を描いて奥へ流れたあと
          フェードアウトし、背後の FV が現れる -->
     <div
@@ -43,9 +43,6 @@ const introTextures = [...projects, ...animations]
     >
       <div class="p-hero__intro-canvas js-hero-intro-canvas"></div>
     </div>
-    <!-- <div class="p-hero__stage">
-      <div class="p-hero__canvas js-hero-canvas" aria-hidden="true"></div>
-    </div> -->
     <!-- FV 本体のタイポグラフィ。イントロ抽選とマグネット演出は hero-typography.js -->
     <HeroTypography />
   </section>
@@ -157,37 +154,6 @@ const introTextures = [...projects, ...animations]
   .p-hero__intro-canvas :global(canvas) {
     display: block;
   }
-  .p-hero.is-webgl {
-    height: 200svh;
-  }
-  .p-hero__stage {
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background-color: transparent;
-  }
-  .p-hero__canvas {
-    display: none;
-  }
-
-  .is-webgl .p-hero__canvas {
-    position: absolute;
-    inset: 0;
-    display: block;
-    opacity: 0;
-    transition: opacity 0.8s ease;
-  }
-
-  /* html.is-ready と混ざらないよう、セクション自身に付いた場合だけに絞る */
-  .p-hero.is-ready .p-hero__canvas {
-    opacity: 1;
-  }
-
-  /* renderer が差し込む canvas はスコープ外なので :global で拾う */
-  .p-hero__canvas :global(canvas) {
-    display: block;
-  }
-
   /* --------------------------------------------------------------
    Animation セクション
    既定は素のリスト。WebGL が使える場合だけ JS が .is-webgl を付け、
@@ -321,7 +287,7 @@ const introTextures = [...projects, ...animations]
 
   .p-project__title {
     color: #fff;
-    font-family: var(--ff-mincho);
+    font-family: var(--ff-display);
     position:absolute;
     top: 120px;
     left: 0;
@@ -352,9 +318,6 @@ const introTextures = [...projects, ...animations]
   .p-project__canvas :global(canvas) {
     display: block;
   }
-
-  /* 全項目を同じセルに重ね、表示中の1件だけ JS が opacity で出す。
-     クリックは板（canvas）へ通したいので、リンク以外は当たり判定を切る */
   .is-webgl .p-project__list {
     position: absolute;
     inset: 0;
@@ -366,10 +329,6 @@ const introTextures = [...projects, ...animations]
     pointer-events: none;
     transition: opacity 0.6s ease;
   }
-
-  /* 折りたたみ中は見出しとプロジェクト名を消して板の動きだけを見せる。
-     背景の流れる文字も sketch.js が同じ長さでフェードさせている
-     (.p-project__title は Animation セクションと共用なので、セクションで絞る) */
   .p-project.is-webgl .p-project__title {
     transition: opacity 0.6s ease;
   }
@@ -650,7 +609,7 @@ const introTextures = [...projects, ...animations]
 }
 .heading-en{
   font-size: 18px;
-  font-weight: 400;
+  font-weight: 700;
   color: #fff;
   display: block;
   line-height: 1;

@@ -2,7 +2,6 @@ import "swiper/css";
 import { initAboutFold } from "./libs/about-fold.js";
 import { initAnimationSlider } from "./libs/animation-slider.js";
 import { initHeaderWeather } from "./libs/header-weather.js";
-import { initHeroHolo } from "./libs/hero-holo.js";
 import { initHeroIntro } from "./libs/hero-intro.js";
 import { initHeroSnap } from "./libs/hero-snap.js";
 import { initHeroTypography } from "./libs/hero-typography.js";
@@ -60,7 +59,6 @@ registerPageInit(() => {
   initNoteSwiper();
   initHeroIntro();
   initHeroTypography();
-  initHeroHolo();
   initAnimationSlider();
   initProjectFold();
   initSectionCrossfade();

@@ -118,46 +118,6 @@ const introTextures = [...projects, ...animations]
     display: block;
   }
 
-  /* 全身 → 上半身へ寄せるためのスクロール区間。
-     1画面ぶん余分に確保し、はみ出た量を 0〜1 に正規化してカメラを動かす。
-     ここを 300svh にすればもっとゆっくり寄る。 */
-  .p-hero.is-webgl {
-    height: 200svh;
-  }
-
-  /* モデルの縁は alpha で抜くので、背面はサイト共通の背景
-     (body::before のグラデーション)を透かす。
-     body::before と同じ z-index: -1 のまま不透明色を敷くと、
-     DOM 順でこちらが手前に来てグラデーションを覆ってしまう。 */
-  .p-hero__stage {
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background-color: transparent;
-  }
-
-  .p-hero__canvas {
-    display: none;
-  }
-
-  .is-webgl .p-hero__canvas {
-    position: absolute;
-    inset: 0;
-    display: block;
-    opacity: 0;
-    transition: opacity 0.8s ease;
-  }
-
-  /* html.is-ready と混ざらないよう、セクション自身に付いた場合だけに絞る */
-  .p-hero.is-ready .p-hero__canvas {
-    opacity: 1;
-  }
-
-  /* renderer が差し込む canvas はスコープ外なので :global で拾う */
-  .p-hero__canvas :global(canvas) {
-    display: block;
-  }
-
   /* --------------------------------------------------------------
    Animation セクション
    既定は素のリスト。WebGL が使える場合だけ JS が .is-webgl を付け、
@@ -301,7 +261,7 @@ const introTextures = [...projects, ...animations]
 
   .p-project__title {
     color: #fff;
-    font-family: var(--ff-mincho);
+    font-family: var(--ff-display);
   }
 
   /* 板の縁は alpha で抜くので、背面はサイト共通の暗い背景を透かす */
@@ -625,7 +585,7 @@ const introTextures = [...projects, ...animations]
 }
 .heading-en{
   font-size: 18px;
-  font-weight: 400;
+  font-weight: 700;
   color: #fff;
   display: block;
   line-height: 1;

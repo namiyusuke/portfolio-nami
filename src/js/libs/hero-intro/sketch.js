@@ -1,6 +1,7 @@
 import gsap from "gsap";
 import * as THREE from "three";
 
+import { rendererQuality } from "../render-quality.js";
 import fragmentShader from "./fragment.glsl?raw";
 import vertexShader from "./vertex.glsl?raw";
 
@@ -37,8 +38,9 @@ export default class HeroIntro {
     this.width = container.offsetWidth;
     this.height = container.offsetHeight;
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const quality = rendererQuality();
+    this.renderer = new THREE.WebGLRenderer({ antialias: quality.antialias, alpha: true });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.pixelRatio));
     this.renderer.setSize(this.width, this.height);
     // ページ背景(サイト共通のグラデーション)を透かすので塗り潰さない
     this.renderer.setClearAlpha(0);

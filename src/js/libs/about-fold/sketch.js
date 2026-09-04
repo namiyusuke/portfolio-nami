@@ -18,6 +18,7 @@ import * as THREE from "three/webgpu";
 import { getLenis } from "../lenis.js";
 // 紙の見え方(カメラ)は Projects の板と揃える
 import { CAMERA_FOV, CAMERA_Z, viewHeightAt } from "../project-fold/plate-metrics.js";
+import { rendererQuality } from "../render-quality.js";
 
 // めくれの表情は project-fold の入退場(= hero-intro の vertex.glsl)と同じ値
 const FLIP_AXIS = [1.0, 1.0, 0.5]; // めくれ本体の斜め回転軸
@@ -68,8 +69,9 @@ export default class AboutFold {
     this.width = this.container.offsetWidth || window.innerWidth;
     this.height = this.container.offsetHeight || window.innerHeight;
 
-    this.renderer = new THREE.WebGPURenderer({ antialias: true, alpha: true });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const quality = rendererQuality();
+    this.renderer = new THREE.WebGPURenderer({ antialias: quality.antialias, alpha: true });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.pixelRatio));
     this.renderer.setSize(this.width, this.height);
     // 背景の暗幕は CSS 側で敷くので塗り潰さない
     this.renderer.setClearAlpha(0);

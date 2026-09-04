@@ -16,6 +16,8 @@ import {
 } from "three/tsl";
 import * as THREE from "three/webgpu";
 
+import { rendererQuality } from "../render-quality.js";
+
 const CURL_RADIUS = 1.8;
 const CURL_HEIGHT = 0.62;
 const CURL_TILT = 0; // 折り線の傾き。左右で捲れ量に差をつけて紙らしくする
@@ -73,8 +75,9 @@ export default class ProjectGallery {
     this.width = window.innerWidth;
     this.height = window.innerHeight;
 
-    this.renderer = new THREE.WebGPURenderer({ antialias: true, alpha: true });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const quality = rendererQuality();
+    this.renderer = new THREE.WebGPURenderer({ antialias: quality.antialias, alpha: true });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.pixelRatio));
     this.renderer.setSize(this.width, this.height);
     this.renderer.setClearAlpha(0);
     await this.renderer.init();

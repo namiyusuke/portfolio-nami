@@ -621,8 +621,17 @@ body::before {
   --ease-in-expo: cubic-bezier(0.7, 0, 0.84, 0);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
-  --ff-mincho: "Italiana", serif;
-  --ff-gothic: "Inter", sans-serif;
+  /* .p-project__title 専用のディスプレイ書体 */
+  --ff-display: "Italiana", serif;
+  /* それ以外は IBM Plex Mono に統一。--ff-mincho / --ff-gothic は
+     既存の参照(30箇所ほど)をそのまま活かすため変数名だけ残している */
+  --ff-mincho: "IBM Plex Mono", ui-monospace, monospace;
+  --ff-gothic: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+body {
+  font-family: var(--ff-mincho);
+  font-weight: 700;
 }
 .cover-bg:after {
   position: fixed;
@@ -652,7 +661,8 @@ body::before {
   opacity: 1;
 } */
 .p-project__title {
-  font-family: var(--ff-mincho);
+  font-family: var(--ff-display);
+  /* Italiana は 400 のみの提供なので、本文の bold には合わせない */
   font-weight: 400;
   /* 1440px で 128px。SP は 100vw 追従だと小さくなりすぎるので 48px で下げ止める */
   font-size: clamp(48px, calc(128 / 1440 * 100vw), 128px);
@@ -660,7 +670,7 @@ body::before {
   padding-inline: var(--offset-inline);
 }
 .project__outline p {
-  font-weight: 400;
+  font-weight: 700;
 }
 .p-about {
   color: #fff;
@@ -691,12 +701,12 @@ body::before {
 }
 .p-about__name-en {
   font-family: var(--ff-gothic);
-  font-weight: 400;
+  font-weight: 700;
   font-size: clamp(1.5rem, 6vw, 2rem);
   line-height: 1;
 }
 .p-about__name-ja {
-  font-weight: 400;
+  font-weight: 700;
   font-size: 1rem;
 }
 .footer-sns-list li a {
@@ -804,7 +814,7 @@ body::before {
   opacity: 0.5;
 }
 .c-about-fold__title {
-  font-family: var(--ff-mincho);
+  font-family: var(--ff-display);
   color: #3C6754;
   font-weight: 400;
   font-size: 40px;
@@ -813,9 +823,7 @@ body::before {
 }
 @media (min-width: 767px) {
 .c-about-fold__title {
-  font-family: var(--ff-mincho);
-  color: #3C6754;
-  font-weight: 400;
+  font-family: var(--ff-display);
   font-size: clamp(20px, calc(128 / 1440 * 100vw), 128px);
   margin-bottom: clamp(20px, 4vw, 48px);
 }
@@ -826,15 +834,16 @@ body::before {
   flex-wrap: wrap;
   gap: 8px 20px;
   margin-bottom:1rem;
+  font-family: var(--ff-mincho);
+  font-weight: 500;
 }
 .c-about-fold__name-en {
-  font-family: var(--ff-gothic);
-  font-weight: 400;
+  font-family: var(--ff-mincho);
   font-size: clamp(1.5rem, 4vw, 2rem);
   line-height: 1;
 }
 .c-about-fold__name-ja {
-  font-weight: 400;
+  font-weight: 700;
   font-size: 1rem;
 }
 .c-about-fold__profile {
@@ -857,11 +866,15 @@ body::before {
   align-items: center;
   justify-content: center;
   width: min(calc(170 / 1440 * 100vw),170px);
-  min-height: 45px;
-  font-weight: 300;
+  font-weight: 500;
   color: inherit;
   border: 1px solid currentColor;
   transition: opacity 0.3s ease;
+  line-height: 1;
+  font-size: 18px;
+  padding-block: 8px;
+  padding-inline: 20px;
+  width: max-content;
 }
 .c-about-fold__sns li a:hover {
   opacity: 0.5;

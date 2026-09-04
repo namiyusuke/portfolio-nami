@@ -25,6 +25,7 @@ import * as THREE from "three/webgpu";
 import { getLenis } from "../lenis.js";
 import { clearPageExit, registerPageExit } from "../page-exit.js";
 import { handoffProjectHero, HERO_HANDOFF_CLASS } from "../project-hero.js";
+import { rendererQuality } from "../render-quality.js";
 import { getSwup } from "../swup.js";
 // 板のサイズ・カメラ設定は詳細ページの画像配置と共有する(遷移で画像を動かさないため)
 import { CAMERA_FOV, CAMERA_Z, DEFAULT_ASPECT, FOLD_DEPTH, PLANE_HEIGHT, plateScale } from "./plate-metrics.js";
@@ -162,8 +163,9 @@ export default class ProjectFold {
     this.width = this.container.offsetWidth;
     this.height = this.container.offsetHeight;
 
-    this.renderer = new THREE.WebGPURenderer({ antialias: true, alpha: true });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const quality = rendererQuality();
+    this.renderer = new THREE.WebGPURenderer({ antialias: quality.antialias, alpha: true });
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, quality.pixelRatio));
     this.renderer.setSize(this.width, this.height);
     // ステージの背景色は CSS 側で敷くので塗り潰さない
     this.renderer.setClearAlpha(0);

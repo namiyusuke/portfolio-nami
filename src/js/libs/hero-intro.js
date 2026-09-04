@@ -32,7 +32,7 @@ export const initHeroIntro = async () => {
   // 再生してもしなくても、FV 側が「イントロ後」の見た目に入るためのフック
   const markDone = () => {
     overlay.classList.add("is-done");
-    document.querySelector(".js-hero-holo")?.classList.add("is-intro-done");
+    document.querySelector(".js-hero")?.classList.add("is-intro-done");
     // ヘッダーは #swup の外なので、html に付けてイントロ後に出す
     document.documentElement.classList.add("is-intro-done");
     // FV 側(hero-typography)がイントロ終了を待って自分の演出を始めるための合図
