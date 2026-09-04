@@ -15,6 +15,12 @@ const ROTATION_ANGLE = 32;
 const FADE_ANGLE = 22;
 // 中央からこの距離を超えた板は描画しない
 const CULL_DISTANCE = UNITS_PER_SLIDE * 1.5;
+// 板の素の横幅（PlaneGeometry の width と同じ値）
+const PLANE_WIDTH = 2;
+// 可視範囲の横幅に対して板が占めてよい最大割合。
+// 縦長画面では板がこの幅に収まるまで縮む（横長画面では等倍のまま）。
+// 1.0 でちょうど全幅。端は捻れ（rotateY）で奥に逃げるため画面端には張り付かない。
+const MAX_WIDTH_RATIO = 0.9;
 
 // スクロールに追従して板を縦に流す WebGL スライダー。
 // スクロール量はセクションの位置から毎フレーム求めるため、
@@ -49,6 +55,7 @@ export default class AnimationSlider {
 
     this.createTimeline();
     this.addObjects(textures, videos);
+    this.updateScale();
 
     this.onResize = this.resize.bind(this);
     window.addEventListener("resize", this.onResize);
@@ -165,6 +172,21 @@ export default class AnimationSlider {
     this.renderer.setSize(this.width, this.height);
     this.camera.aspect = this.width / this.height;
     this.camera.updateProjectionMatrix();
+    this.updateScale();
+  }
+
+  // 縦長画面では板が可視範囲の横幅からはみ出すため、
+  // MAX_WIDTH_RATIO に収まるサイズまで全体を等倍で縮める。
+  // シェーダの縦送り（progress）はローカル座標に足すのでスケールごと縮み、
+  // 板同士の間隔・回転の見た目は崩れない。
+  updateScale() {
+    const visibleHeight =
+      2 * this.camera.position.z * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2));
+    const visibleWidth = visibleHeight * this.camera.aspect;
+    const scale = Math.min(1, (visibleWidth * MAX_WIDTH_RATIO) / PLANE_WIDTH);
+    for (const { mesh } of this.meshes) {
+      mesh.scale.setScalar(scale);
+    }
   }
 
   // セクションの sticky 区間を 0〜1 に正規化する

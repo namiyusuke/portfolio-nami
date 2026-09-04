@@ -172,6 +172,13 @@ const outlineHtml = project.outline?.length
     --p-project-hero-h: calc(var(--p-project-hero-w) / var(--p-project-hero-aspect));
   }
 
+  /* スマホは板を大きく映す。plate-metrics.js の PLANE_FIT_NARROW / NARROW_STAGE_WIDTH と揃えること */
+  @media (max-width: 767px) {
+    :global(html) {
+      --p-project-hero-w: min(1200px, 92vw, calc(92svh * var(--p-project-hero-aspect)));
+    }
+  }
+
   .project__hero {
     --p-project-hero-top: calc((100svh - var(--p-project-hero-h)) / 2);
 

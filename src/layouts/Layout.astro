@@ -44,20 +44,8 @@ const isProd = import.meta.env.PROD;
     {SITE.trackingId && isProd && <GoogleAnalytics />}
   </head>
   <body>
-    <!-- (1) body 直下: ローディング画面 + 遷移カーテン -->
-    <!-- <div class="c-loading">
-      <div class="c-loading__inner">
-        <div class="c-loading__counter">000</div>
-        <div class="c-loading__bar"><span class="c-loading__bar-fill"></span></div>
-      </div>
-    </div> -->
     <div class="c-transition" aria-hidden="true"></div>
-
-    <!-- (2) header / nav は #swup の外(遷移時に保持される) -->
     <GlobalHeader />
-
-    <!-- ヘッダーの About から開くオーバーレイ。ヘッダー同様 #swup の外で保持される。
-         紙(WebGPU の板)が降りて着地したら .is-landed が付き、__paper の中身が出る -->
     <div class="c-about-fold js-about-overlay" aria-hidden="true">
       <div class="c-about-fold__canvas js-about-canvas"></div>
       <div class="c-about-fold__paper js-about-paper">
@@ -80,16 +68,10 @@ const isProd = import.meta.env.PROD;
         </div>
       </div>
     </div>
-
-    <!-- (3) ページごとに中身が変わる範囲を #swup で囲う -->
     <div id="swup" class="transition-fade">
       <slot />
     </div>
-
-    <!-- (4) footer も #swup の外 -->
     <GlobalFooter />
-
-    <!-- (5) Swup + GSAP バンドル。Astro が初回に1度だけ実行する -->
     <script src="../js/main.js"></script>
   </body>
 </html>

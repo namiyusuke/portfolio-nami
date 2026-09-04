@@ -314,13 +314,6 @@ const introTextures = [...projects, ...animations]
     height: auto;
   }
 
-  /* --------------------------------------------------------------
-   Projects セクション
-   既定は素のリスト。WebGL2(=WebGPU のフォールバック先)が使える場合だけ
-   JS が .is-webgl を付け、1画面のステージ表示に切り替える。
-   板をクリックすると折りたたみが始まり(その間は .is-folded が付く)、
-   折り終わりからそのまま詳細ページへ遷移する。
-  -------------------------------------------------------------- */
   .p-project {
     position: relative;
     z-index: 10;
@@ -329,6 +322,12 @@ const introTextures = [...projects, ...animations]
   .p-project__title {
     color: #fff;
     font-family: var(--ff-mincho);
+    position:absolute;
+    top: 120px;
+    left: 0;
+    @media (--md) {
+      top: 30px;
+    }
   }
 
   /* 板の縁は alpha で抜くので、背面はサイト共通の暗い背景を透かす */
@@ -336,7 +335,6 @@ const introTextures = [...projects, ...animations]
     position: relative;
     height: 100svh;
     background-color: transparent;
-    /* クロスフェード中は section-crossfade.js が毎フレーム opacity を書く */
     will-change: opacity;
   }
 
