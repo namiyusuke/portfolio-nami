@@ -150,6 +150,12 @@ export const project = defineType({
       title: 'リンク',
       type: 'url',
     }),
+    defineField({
+      name: 'backgroundText',
+      title: '背景テキスト',
+      description: '一覧の板の背後をループで流れる文字。未入力なら何も流れない。',
+      type: 'string',
+    }),
   ],
 
   preview: {

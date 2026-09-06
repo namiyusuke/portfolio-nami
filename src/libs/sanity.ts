@@ -30,6 +30,8 @@ export type Project = {
   images: SanityImage[];
   credits: Credit[] | null;
   link: string | null;
+  // 一覧の板の背後をループで流す文字（未設定なら null）
+  backgroundText: string | null;
 };
 
 export type Animation = {
@@ -85,6 +87,7 @@ const PROJECT_FIELDS = `
   credits[]{_key, role, name},
   ${THUMBNAIL_FIELD},
   link,
+  backgroundText,
   images[]{
     ...,
     "dimensions": asset->metadata.dimensions

@@ -67,24 +67,36 @@ const LAND_FALLBACK = 4000; // 入場側が呼ばれなかったときに板を�
 const easeOutQuad = (x) => x.oneMinus().pow(2).oneMinus();
 const easeInOutCubic = (x) => mix(x.pow(3).mul(4), float(1).sub(x.mul(-2).add(2).pow(3).div(2)), step(0.5, x));
 
-// テキストを横一列に敷き詰めた帯を作る。
-// キャンバス幅を「1文字送り(step)の整数倍」にしておくと、RepeatWrapping で
-// 右端と左端がぴったり繋がるので、UV をずらすだけで無限ループのマーキーになる
-const makeTextTexture = (text, { height = 256, fontSize = 170, gap = 140 } = {}) => {
+const makeTextTexture = (
+  text,
+  { height = 256, fontSize = 170, gap = 140, strokeWidth = 2, letterSpacing = "0.08em" } = {},
+) => {
   const ctx = document.createElement("canvas").getContext("2d");
   const font = `700 ${fontSize}px "Helvetica Neue", Arial, sans-serif`;
-  ctx.font = font;
+  // canvas の letterSpacing は未対応ブラウザだと単に無視される(字間なしで描かれる)
+  const applyTextStyle = () => {
+    ctx.font = font;
+    ctx.letterSpacing = letterSpacing;
+  };
+
+  applyTextStyle();
   const advance = Math.ceil(ctx.measureText(text).width + gap);
   const count = Math.max(1, Math.round(2048 / advance));
+  // 大文字の実測アセントがキャップハイト。取れないブラウザ向けに em の 0.72 で近似する
+  const capHeight = ctx.measureText("H").actualBoundingBoxAscent || fontSize * 0.72;
+  // 箱の下辺 = ベースライン。箱(高さ capHeight)を帯の中央に置いたときのベースライン位置
+  const baseline = (height + capHeight) / 2;
 
   const canvas = ctx.canvas;
   canvas.width = advance * count;
   canvas.height = height;
-  ctx.font = font; // canvas のリサイズで 2D コンテキストの状態はリセットされる
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = "#ffffff";
+  applyTextStyle(); // canvas のリサイズで 2D コンテキストの状態はリセットされる
+  ctx.textBaseline = "alphabetic";
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = strokeWidth;
+  ctx.lineJoin = "round";
   for (let i = 0; i < count; i++) {
-    ctx.fillText(text, i * advance, height / 2);
+    ctx.strokeText(text, i * advance, baseline);
   }
 
   const tex = new THREE.CanvasTexture(canvas);

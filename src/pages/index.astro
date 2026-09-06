@@ -98,7 +98,7 @@ const introTextures = [...projects, ...animations]
               ? urlFor(project.thumbnail).width(1280).auto("format").url()
               : undefined}
             data-aspect={imageAspectRatio(project.thumbnail)}
-            data-text={project.title}
+            data-text={project.backgroundText ?? ""}
           >
             <a class="p-project__link" href={`${SITE.base}/project/${project.slug.current}/`}>
               {project.thumbnail && (
