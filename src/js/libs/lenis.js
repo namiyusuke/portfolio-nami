@@ -36,10 +36,5 @@ export const resetScroll = () => {
   }
 };
 
-// location.hash に対応する要素へスムーススクロールする。要素が無ければ何もしない
-export const scrollToHash = (hash) => {
-  const target = hash ? document.querySelector(hash) : null;
-  if (lenis && target) {
-    lenis.scrollTo(target);
-  }
-};
+// アンカーへのスムーススクロール(scrollToHash)は anchor-scroll.js にある。
+// hero-snap の割り込みを止める必要があり、ここに置くと循環参照になるため

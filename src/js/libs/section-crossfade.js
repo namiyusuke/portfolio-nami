@@ -45,8 +45,6 @@ export const initSectionCrossfade = () => {
 
   // MV → Animation。タイポグラフィは sticky なので、消えるまで画面に留まっている
   const heroTypography = document.querySelector(".js-hero .js-hero-typography");
-  // タイトルは固定しない方針なので opacity だけ合わせる(位置は通常フローのまま)
-  const animationTitle = animation.querySelector(".js-animation-title");
 
   // Animation → Projects。Projects も WebGL 表示のときだけ重なりがある
   const project = document.querySelector(".js-project-fold.is-webgl");
@@ -66,11 +64,7 @@ export const initSectionCrossfade = () => {
       const top = animation.getBoundingClientRect().top;
       enterFade = clamp01(1 - top / vh);
 
-      // タイトルはスクロールで流れたまま、透明度だけステージと同じ曲線で上げる
-      if (animationTitle) {
-        animationTitle.style.opacity = enterFade < 1 ? String(enterFade) : "";
-        animationTitle.style.visibility = enterFade === 0 ? "hidden" : "";
-      }
+      // タイトルはステージの中(sticky)にあるので、opacity はステージごと下で振る
 
       // MV 側は同じ区間で消えていく(sticky で止まったまま薄くなる)
       heroTypography.style.opacity = enterFade > 0 ? String(1 - enterFade) : "";
@@ -95,7 +89,7 @@ export const initSectionCrossfade = () => {
     animationStage.style.visibility = opacity === 0 ? "hidden" : "";
   };
 
-  targets = [animationStage, animationTitle, projectStage, heroTypography].filter(Boolean);
+  targets = [animationStage, projectStage, heroTypography].filter(Boolean);
   // Lenis や各 sketch と同じ gsap.ticker に乗せて同期させる
   tick = update;
   gsap.ticker.add(tick);

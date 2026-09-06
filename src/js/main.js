@@ -5,8 +5,8 @@ import { initHeaderWeather } from "./libs/header-weather.js";
 import { initHeroIntro } from "./libs/hero-intro.js";
 import { initHeroSnap } from "./libs/hero-snap.js";
 import { initHeroTypography } from "./libs/hero-typography.js";
-import { initAnchorScroll } from "./libs/anchor-scroll.js";
-import { initLenis, resetScroll, scrollToHash } from "./libs/lenis.js";
+import { initAnchorScroll, scrollToHash } from "./libs/anchor-scroll.js";
+import { initLenis, resetScroll } from "./libs/lenis.js";
 import Observer from "./libs/observer.js";
 import { initProjectFold } from "./libs/project-fold.js";
 import { initProjectGallery } from "./libs/project-gallery.js";
@@ -21,8 +21,6 @@ initLenis();
 initHeaderWeather();
 // About オーバーレイ(紙めくり)もヘッダー同様 #swup の外なので初回に一度だけ配線する
 initAboutFold();
-// ページ内アンカー(/#animation 等)を Lenis のスムーススクロールで処理する
-initAnchorScroll();
 
 registerPageTransition({
   initial,
@@ -69,3 +67,7 @@ registerPageInit(() => {
 });
 
 initSwup();
+
+// ページ内アンカー(/#animation 等)を Lenis のスムーススクロールで処理する。
+// Swup のスクロール系フックを差し替えるので initSwup() のあとに呼ぶ
+initAnchorScroll();

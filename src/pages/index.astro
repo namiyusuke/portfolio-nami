@@ -51,10 +51,10 @@ const introTextures = [...projects, ...animations]
     class="p-animation js-animation-slider"
     style={`--p-animation-count:${animations.length}`}
   >
-    <!-- タイトルは固定しない(通常フローのままスクロールで流れる)。
-         MV からのクロスフェード中だけ section-crossfade.js が opacity を合わせる -->
-    <h2 class="p-animation__title p-project__title js-animation-title">Animation</h2>
     <div class="p-animation__stage js-animation-stage">
+      <!-- タイトルは sticky なステージの中に置いて、セクション中は画面に固定する。
+           前後のクロスフェードはステージごと section-crossfade.js が opacity を振る -->
+      <h2 class="p-animation__title p-project__title js-animation-title">Animation</h2>
       <div class="p-animation__canvas js-animation-canvas" aria-hidden="true"></div>
       <ul class="p-animation__list">
         {animations.map((animation) => (
@@ -185,6 +185,11 @@ const introTextures = [...projects, ...animations]
     color: #fff;
     font-family: var(--ff-mincho);
     will-change: opacity;
+  }
+
+  /* .p-animation__list(inset:0 のオーバーレイ)より前に出しておく */
+  .is-webgl .p-animation__title {
+    z-index: 2;
   }
 
   /* 板の縁は alpha で抜くので、背面はサイト共通の暗い背景を透かす */

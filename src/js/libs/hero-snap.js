@@ -9,12 +9,29 @@ import { getLenis } from "./lenis.js";
 // 再生されるので、体感は「ひとスクロール = ワンショットのフェード」になる。
 
 let tick = null;
+// アンカースクロール中など、外から一時的にスナップを黙らせるためのフラグ。
+// 黙らせないと Animation を通り過ぎる搬送(例: MV → Projects)を横取りしてしまう
+let suspended = false;
+// 現在のスクロール位置から状態を取り直す関数(init 内で差し込む)
+let resync = null;
+
+export const suspendHeroSnap = () => {
+  suspended = true;
+};
+
+export const resumeHeroSnap = () => {
+  suspended = false;
+  // 黙らせている間にスクロール位置が変わっているので状態を取り直す
+  resync?.();
+};
 
 export const destroyHeroSnap = () => {
   if (tick) {
     gsap.ticker.remove(tick);
     tick = null;
   }
+  suspended = false;
+  resync = null;
 };
 
 export const initHeroSnap = () => {
@@ -37,18 +54,21 @@ export const initHeroSnap = () => {
   const EPS = 4;
 
   // "mv"(MV に静止) / "slider"(Animation 以降を自由スクロール) / "snapping"(運搬中)
-  // スクロール復元などで区間の途中から始まった場合は、近いほうへ寄る状態を選ぶ
+  // スクロール復元やアンカー着地で区間の途中にいる場合は、近いほうへ寄る状態を選ぶ
   // ("mv" は下へ、"slider" は上へスナップする)
-  const initialTop = animation.getBoundingClientRect().top;
-  const vh = window.innerHeight;
-  let state;
-  if (initialTop <= EPS) {
-    state = "slider";
-  } else if (initialTop >= vh - EPS) {
-    state = "mv";
-  } else {
-    state = initialTop <= vh / 2 ? "mv" : "slider";
-  }
+  const resolveState = () => {
+    const top = animation.getBoundingClientRect().top;
+    const vh = window.innerHeight;
+    if (top <= EPS) {
+      return "slider";
+    }
+    if (top >= vh - EPS) {
+      return "mv";
+    }
+    return top <= vh / 2 ? "mv" : "slider";
+  };
+
+  let state = resolveState();
 
   // "mv" | "slider" — 運搬中の目的地
   let snapDest = null;
@@ -65,6 +85,11 @@ export const initHeroSnap = () => {
   };
 
   const update = () => {
+    // アンカースクロールの搬送中は一切割り込まない
+    if (suspended) {
+      return;
+    }
+
     const top = animation.getBoundingClientRect().top;
 
     if (state === "snapping") {
@@ -89,6 +114,11 @@ export const initHeroSnap = () => {
       // スライダー先頭から上へ抜けたら MV まで戻す
       snapTo(0, "mv");
     }
+  };
+
+  resync = () => {
+    state = resolveState();
+    snapDest = null;
   };
 
   // Lenis や各 sketch と同じ gsap.ticker に乗せて同期させる
