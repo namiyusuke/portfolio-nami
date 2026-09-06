@@ -134,6 +134,13 @@ const navLists = [
       opacity 0.3s var(--ease-in-sine),
       visibility 0.3s var(--ease-in-sine);
   }
+   @media (--md) {
+      .header-nav {
+    opacity: 1;
+    visibility: visible;
+      }
+
+   }
   .header-nav.is-open {
     translate: 0 0;
     visibility: visible;
@@ -141,7 +148,6 @@ const navLists = [
     transition:
       opacity 0.3s var(--ease-in-sine),
       visibility 0.3s var(--ease-in-sine);
-
   }
 
 .header-nav-list{
@@ -157,6 +163,11 @@ const navLists = [
     transition:
       translate 0.8s var(--ease-in-out-cubic);
   }
+   @media (--md) {
+    .header-nav-item a{
+    translate: 0 0;
+  }
+   }
   .header-nav-item a {
     line-height: 1;
     display: block;
