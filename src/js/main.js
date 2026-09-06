@@ -1,6 +1,7 @@
 import "swiper/css";
 import { initAboutFold } from "./libs/about-fold.js";
 import { initAnimationSlider } from "./libs/animation-slider.js";
+import { initGlobalNav } from "./libs/global-nav.js";
 import { initHeaderWeather } from "./libs/header-weather.js";
 import { initHeroIntro } from "./libs/hero-intro.js";
 import { initHeroSnap } from "./libs/hero-snap.js";
@@ -16,17 +17,12 @@ import { initNoteSwiper } from "./libs/swiper.js";
 import { initSwup, registerPageInit, registerPageTransition } from "./libs/swup.js";
 import { enter, initial, leave } from "./libs/transition.js";
 initLenis();
-
-// ヘッダーは #swup の外にあり遷移時も保持されるため、初回に一度だけ更新する
 initHeaderWeather();
-// About オーバーレイ(紙めくり)もヘッダー同様 #swup の外なので初回に一度だけ配線する
 initAboutFold();
-
+initGlobalNav();
 registerPageTransition({
   initial,
   leave,
-  // ページ入場前にスクロール位置を先頭へ戻し、
-  // アンカー付き遷移(下層ページ → /#animation 等)は入場演出のあとスムーススクロールで移動
   enter: async (visit) => {
     resetScroll();
     await enter(visit);

@@ -22,7 +22,16 @@ const navLists = [
       style={`--logo:url(${logo.src}); width:${logo.width}px; height:${logo.height}px;`}
     ></span>
   </h1>
-  <nav class="header-nav">
+  <button
+    class="header-toggle js-nav-toggle"
+    type="button"
+    aria-label="メニューを開く"
+    aria-expanded="false"
+    aria-controls="global-nav"
+  >
+    <span class="header-toggle-label js-nav-toggle-label">menu</span>
+  </button>
+  <nav id="global-nav" class="header-nav js-nav">
     <ul class="header-nav-list">
       <li class="header-nav-item">
         <a href={`${SITE.base}/`}>
@@ -40,8 +49,6 @@ const navLists = [
         </a>
       </li>
       <li class="header-nav-item">
-        <!-- data-no-swup: Swup は preventDefault を見ないため、これが無いと
-             「現在ページへのリンク」扱いでページ先頭へスクロールされてしまう -->
         <a href="#" class="js-about-open" data-no-swup>
          About
         </a>
@@ -58,8 +65,8 @@ const navLists = [
     width: 100%;
     z-index: 1000;
     color: #fff;
-    padding-inline:74px;
-    padding-block:40px;
+    padding-inline: var(--offset-inline);
+    padding-block: 20px;
     /* イントロのキャンバスは背景を透かすため、z-index では隠しきれない。
        イントロが終わる(hero-intro.js が html に is-intro-done を付ける)までは
        ヘッダー自体を隠しておく。イントロが無いページでは即付く */
@@ -71,10 +78,137 @@ const navLists = [
     opacity: 1;
     transition: opacity 0.8s var(--ease-out-cubic);
   }
+
+  /* --------------------------------------------------------------
+   SP のドロワー。
+   ハンバーガーを押すと .header-nav が右から全画面でスライドインし、
+   リンクが少し遅れて順にフェードで立ち上がる。--md 以上では
+   ドロワーを解いて、これまでどおりの横並びナビに戻す
+  -------------------------------------------------------------- */
+  .header-toggle {
+    /* ドロワー(z-index: 1)より手前に置いて、開いたあとも押せるようにする */
+    position: relative;
+    z-index: 2;
+    display: grid;
+    gap: 7px;
+    margin-left: auto;
+    font-size: 18px;
+    padding-block: 6px;
+    border: 0;
+    background: none;
+    color: inherit;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .header-toggle-bar {
+    display: block;
+    height: 1px;
+    background-color: currentcolor;
+    transition:
+      translate 0.4s var(--ease-out-cubic),
+      rotate 0.4s var(--ease-out-cubic);
+  }
+  /* 2 本を中央(gap 7px + 線 1px = 中心間 8px)で交差させて × にする */
+  .header-toggle.is-open .header-toggle-bar:first-child {
+    translate: 0 4px;
+    rotate: 45deg;
+  }
+  .header-toggle.is-open .header-toggle-bar:last-child {
+    translate: 0 -4px;
+    rotate: -45deg;
+  }
+
+  .header-nav {
+    position: fixed;
+    top: 60px;
+    right: 24px;
+    z-index: 1;
+    display: grid;
+    background-color: #fff;
+    /* translate: 150% 0; */
+    visibility: hidden;
+    padding-block: 20px;
+    padding-inline: 40px;
+    opacity: 0;
+    transition:
+      opacity 0.3s var(--ease-in-sine),
+      visibility 0.3s var(--ease-in-sine);
+  }
+  .header-nav.is-open {
+    translate: 0 0;
+    visibility: visible;
+    opacity: 1;
+    transition:
+      opacity 0.3s var(--ease-in-sine),
+      visibility 0.3s var(--ease-in-sine);
+
+  }
+
 .header-nav-list{
-  display: flex;
+  display: grid;
   gap: 26px;
-  justify-content: flex-end;
-  align-items: center;
 }
+  .header-nav-item{
+    overflow: hidden;
+  }
+  .header-nav-item a{
+    translate: 0 100%;
+    overflow: hidden;
+    transition:
+      translate 0.8s var(--ease-in-out-cubic);
+  }
+  .header-nav-item a {
+    line-height: 1;
+    display: block;
+    font-size: 16px;
+    color: #3C6754;
+  }
+  .header-nav.is-open .header-nav-item a{
+    translate: 0 0%;
+  }
+  .header-nav.is-open .header-nav-item:nth-child(1) {
+    transition-delay: 0.2s;
+  }
+  .header-nav.is-open .header-nav-item:nth-child(2) {
+    transition-delay: 0.28s;
+  }
+  .header-nav.is-open .header-nav-item:nth-child(3) {
+    transition-delay: 0.32s;
+  }
+  .header-nav.is-open .header-nav-item:nth-child(4) {
+    transition-delay: 0.36s;
+  }
+
+  @media (--md) {
+    .header {
+      padding-inline: 74px;
+      padding-block: 40px;
+    }
+    .header-toggle {
+      display: none;
+    }
+    .header-nav {
+      position: static;
+      display: block;
+      background-color: transparent;
+      translate: none;
+      visibility: visible;
+      transition: none;
+    }
+    .header-nav-list {
+      display: flex;
+      gap: 26px;
+      justify-content: flex-end;
+      align-items: center;
+    }
+    .header-nav-item {
+      opacity: 1;
+      translate: none;
+      transition: none;
+    }
+    .header-nav-item a {
+      padding-block: 0;
+      font-size: inherit;
+    }
+  }
 </style>

@@ -35,7 +35,7 @@ const EXIT_DELAY = 0.25; // 閉じ操作から紙が動き出すまでの間(秒
 const ENTER_DIAGONAL = 0.6;
 // 紙の傾き(rad)。降りてくる間も着地後もこの角度のまま。
 // DOM 側の中身も CSS 変数(--about-paper-tilt)経由で同じ角度に回して重ねる
-const ENTER_TILT = 0.14;
+const ENTER_TILT = 0.05;
 
 // 紙の目標幅(px)と比率。縦横は画面の向きで切り替える
 const PAPER_WIDTH = 900;
@@ -43,12 +43,6 @@ const PAPER_WIDTH = 900;
 const PAPER_FIT = 0.6;
 const ASPECT_WIDE = 1.5;
 const ASPECT_TALL = 0.72;
-
-// About オーバーレイの紙。
-// ヘッダーの About を押すと、Projects の板と同じめくれ(スピン + 斜め軸の
-// フリップ + 垂れ下がり)をほどきながら画面上から降りてきて中央に着地する。
-// 着地したら overlay に .is-landed を付け、DOM 側の中身(紙と同じ矩形に
-// 重ねたプロフィール)を CSS でフェードインさせる。閉じると逆に巻き上げて抜ける。
 export default class AboutFold {
   constructor({ overlay, container }) {
     this.overlay = overlay;

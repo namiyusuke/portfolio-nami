@@ -16,8 +16,6 @@ export const initAboutFold = () => {
   }
 
   const container = overlay.querySelector(".js-about-canvas");
-  // WebGPU 非対応環境では WebGL2 バックエンドへ落ちる。その WebGL2 も無い場合と
-  // prefers-reduced-motion では、CSS だけのフェード表示にフォールバックする
   let webgl =
     Boolean(container) && !window.matchMedia("(prefers-reduced-motion: reduce)").matches && isWebGL2Available();
   if (!webgl) {
@@ -80,9 +78,6 @@ export const initAboutFold = () => {
 
   for (const opener of openers) {
     opener.addEventListener("click", (event) => {
-      // href="#" の素のジャンプ(ページ先頭へ)を止める。
-      // Swup は preventDefault を見ずに document でクリックを拾うので、
-      // Swup 側はリンクの data-no-swup 属性で無視させる
       event.preventDefault();
       open();
     });

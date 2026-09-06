@@ -483,7 +483,7 @@ export default class ProjectFold {
 
     const { flipSpin, flipBend, flipAxis } = this.uniforms;
     this.gui = new GUI({ title: "project swap" });
-
+    this.gui.hide();
     const timing = this.gui.addFolder("timing");
     timing.add(this.params, "hold", 0, 8, 0.1).name("待ち時間");
     timing.add(this.params, "fade", 0.1, 3, 0.05).name("クロスフェード");

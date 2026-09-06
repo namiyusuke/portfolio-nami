@@ -623,8 +623,6 @@ body::before {
   --ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
   /* .p-project__title 専用のディスプレイ書体 */
   --ff-display: "Italiana", serif;
-  /* それ以外は IBM Plex Sans に統一。--ff-mincho / --ff-gothic は
-     既存の参照(30箇所ほど)をそのまま活かすため変数名だけ残している */
   --ff-mincho: "IBM Plex Sans", sans-serif;
   --ff-gothic: "IBM Plex Sans", sans-serif;
 }

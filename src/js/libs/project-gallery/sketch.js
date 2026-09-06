@@ -201,6 +201,7 @@ export default class ProjectGallery {
     this.gui.add(this.params, "start", 0.2, 1.2, 0.01).name("捲れ始めのライン");
     this.gui.add(this.params, "end", 0, 1, 0.01).name("戻り切るライン");
     this.gui.add(this.params, "smooth", 0.5, 12, 0.1).name("追従の速さ");
+    this.gui.hide()
   }
 
   syncItem(item, deltaTime) {
