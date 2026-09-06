@@ -136,6 +136,8 @@ const navLists = [
   }
    @media (--md) {
       .header-nav {
+    padding-block: 0px;
+    padding-inline: 0px;
     opacity: 1;
     visibility: visible;
       }
@@ -163,17 +165,19 @@ const navLists = [
     transition:
       translate 0.8s var(--ease-in-out-cubic);
   }
-   @media (--md) {
-    .header-nav-item a{
-    translate: 0 0;
-  }
-   }
+
   .header-nav-item a {
     line-height: 1;
     display: block;
     font-size: 16px;
     color: #3C6754;
   }
+   @media (--md) {
+    .header-nav-item a{
+    translate: 0 0;
+    color: #fff;
+  }
+   }
   .header-nav.is-open .header-nav-item a{
     translate: 0 0%;
   }
