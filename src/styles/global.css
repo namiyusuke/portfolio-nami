@@ -879,7 +879,7 @@ body {
 }
 }
 @media (min-width: 767px) {
-  .c-about-fold__inner-content{
+  .c-about-fold__inner{
   padding-inline: clamp(20px, 3.5vw, 120px);
 }
 }
