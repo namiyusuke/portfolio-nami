@@ -111,6 +111,7 @@ const introTextures = [...projects, ...animations]
                   loading="lazy"
                 />
               )}
+              <span class="p-project__link-label">View Project</span>
             </a>
           </li>
         ))}
@@ -238,6 +239,7 @@ const introTextures = [...projects, ...animations]
     font-size: clamp(24px, calc(48 / 1440 * 100vw), 48px);
     text-align: center;
     padding-inline: var(--offset-inline);
+    font-weight: 400;
     text-wrap: balance;
   }
 
@@ -326,11 +328,12 @@ const introTextures = [...projects, ...animations]
   .is-webgl .p-project__list {
     position: absolute;
     inset: 0;
+    bottom: 20%;
     z-index: 1;
     display: grid;
     align-content: end;
     justify-items: center;
-    padding-bottom: clamp(24px, 8svh, 72px);
+    /* padding-bottom: clamp(24px, 8svh, 72px); */
     pointer-events: none;
     transition: opacity 0.6s ease;
   }
@@ -349,11 +352,37 @@ const introTextures = [...projects, ...animations]
     text-align: center;
   }
 
+  /* 押せるのは表示中の項目だけ。切り替えは sketch.js の syncItems() が
+     li の pointer-events で行う。ここに pointer-events: auto を書くと
+     「親が none でも子が auto なら当たる」仕様で全項目のリンクが当たり判定を持ち、
+     grid-area: 1 / 1 で重なっているぶん一番手前(＝最後の項目)に必ず飛んでしまう */
   .is-webgl .p-project__link {
     display: inline-block;
     color: #fff;
     text-decoration: none;
-    pointer-events: auto;
+  }
+
+  /* スマホは板に触れた瞬間に遷移するとスクロールと区別がつかないので、
+     板からは飛ばさずこのボタンから詳細ページへ入る(板のクリック遷移はマウスのみ) */
+  .p-project__link-label {
+    display: none;
+  }
+
+  .is-webgl .p-project__link-label {
+    display: inline-flex;
+    align-items: center;
+    padding-inline: 16px;
+    padding-block: 10px;
+    color: #fff;
+    font-size: 14px;
+    border: 1px solid #fff;
+    font-weight: 500;
+  }
+
+  @media (--md) {
+    .is-webgl .p-project__link-label {
+      display: none;
+    }
   }
 
   .is-webgl .p-project__list-item-title {

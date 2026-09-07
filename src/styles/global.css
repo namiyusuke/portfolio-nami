@@ -717,7 +717,7 @@ body {
   justify-content: center;
   border: 1px solid #fff;
 }
-@media (min-width: 768px) {
+@media (min-width: 767px) {
   .footer-sns-list li a {
     width: 170px;
   }
@@ -766,8 +766,12 @@ body {
 /* 中身。WebGL の紙とまったく同じ矩形に重ねる(背景は持たない) */
 .c-about-fold__paper {
   background-image: url('../assets/images/about-noize.png');
-  background-size: cover;
+  /* 1px 単位のグレイン。cover で伸縮させるとブラウザの補間で平均化されて
+     ざらつきが消えるので、画像実寸の半分(= 2x ディスプレイで 1 テクセル : 1 物理ピクセル)で
+     タイルし、補間もニアレストにして粒を残す */
+  background-size: 675px 450px;
   background-repeat: repeat;
+  image-rendering: pixelated;
   position: absolute;
   top: 50%;
   left: 50%;
@@ -847,8 +851,16 @@ body {
 .c-about-fold__profile {
   max-width: 40em;
   font-weight: 500;
+  line-height: 1.4;
+  font-size: clamp(14px, calc(16 / 1440 * 100vw),16px);
+}
+@media (min-width: 767px) {
+  .c-about-fold__profile {
+  max-width: 40em;
+  font-weight: 500;
   line-height: 1.8;
   font-size: clamp(14px, calc(16 / 1440 * 100vw),16px);
+}
 }
 /* 英数字だけ semiBold */
 .c-about-fold__profile-en {
@@ -856,12 +868,38 @@ body {
 }
 .c-about-fold__inner{
   color: #3C6754;
+  max-width: 220px;
+  margin-inline: auto;
+}
+@media (min-width: 767px) {
+  .c-about-fold__inner{
+  color: #3C6754;
+  max-width: initial;
+  margin-inline: auto;
+}
+}
+@media (min-width: 767px) {
+  .c-about-fold__inner-content{
+  padding-inline: clamp(20px, 3.5vw, 120px);
+}
 }
 .c-about-fold__sns {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px 20px;
-  margin-top: clamp(24px, 4vw, 40px);
+  gap: 12px;
+  margin-top: 24px;
+  max-width: 200px;
+  margin-inline: auto;
+}
+
+@media (min-width: 767px) {
+  .c-about-fold__sns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 20px;
+    max-width: initial;
+    margin-top: clamp(24px, 4vw, 40px);
+  }
 }
 .c-about-fold__sns li a {
   display: flex;
@@ -884,7 +922,8 @@ body {
 /* WebGL 不可 / prefers-reduced-motion のフォールバック。
    __paper 自体を紙に見立てて、上からのスライド + フェードだけで出す */
 .c-about-fold.is-plain .c-about-fold__paper {
-  background: #f2efe7;
+  /* shorthand だと background-image のノイズごと消えるので色だけ差し替える */
+  background-color: #f2efe7;
   transform: translateY(-6vh);
   transition:
     opacity 0.5s ease,

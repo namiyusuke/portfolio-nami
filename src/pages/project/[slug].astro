@@ -57,92 +57,91 @@ const outlineHtml = project.outline?.length
   description={project.title}
 >
   <main class="project">
-    {/* 板と同じ比率をCSSへ渡す。JS が実寸を書き込むまでの目安(下の :global(html) を参照) */}
-    <script is:inline define:vars={{ heroAspect }}>
-      document.documentElement.style.setProperty("--p-project-hero-aspect", heroAspect);
-    </script>
-    <div
-      class:list={[
-        "project__hero",
-        thumbnail ? "js-project-hero-stage" : "project__hero--text",
-      ]}
-    >
-      {
-        thumbnail && (
-          <figure class="project__thumb">
-            <img
-              class="js-project-hero"
-              crossorigin="anonymous"
-              src={urlFor(thumbnail).width(MAIN_WIDTH).auto("format").url()}
-              width={MAIN_WIDTH}
-              height={heroHeight}
-              alt={thumbnail.alt ?? project.title}
-            />
-          </figure>
-        )
-      }
-    </div>
-
-      <div class="project__head-wrapper">
-        <div class="project__head">
-          <h1 class="project__title">{project.title}</h1>
-        </div>
-           <div class="project__head-wrapper">
-            <ul class="project__image-list js-project-gallery">
-
-              {project.images && project.images.map((image) => (
-                <li>
-                  <img
-                    class="js-project-gallery-item"
-                    crossorigin="anonymous"
-                    src={urlFor(image).width(1600).auto("format").url()}
-                    width={image.dimensions.width}
-                    height={image.dimensions.height}
-                    alt={image.alt ?? project.title}
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </li>
-              ))}
-            </ul>
-          </div>
-        <div class="project__body">
-          <p class="project__back">
-            <a target="_blank" rel="noopener noreferrer" href={project.link ?? "#"}>View site</a>
-          </p>
-        </div>
-          <div class="project__detail-wrapper">
-            <section class="project__detail-section">
-              {outlineHtml && (
-                <div class="project__outline-wrapper">
-                  <h3 class="project__outline-title project-detail__ttl">
-                   概要
-                  </h3>
-                  <div class="project__outline" set:html={outlineHtml} />
-                </div>
-              )}
-            </section>
-            <section class="project-member project__detail-section">
-              <h3 class="project-member__ttl project-detail__ttl">
-                Project Member
-              </h3>
-              <div class="project-member__list-wrapper">
-                <ul class="project-member__list">
-                  {project.credits && project.credits.map((credit) => (
-                    <li class="project-member__item">
-                      <span class="project-member__role">{credit.role}</span>
-                      <span class="project-member__name">{credit.name}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </section>
-          </div>
+    <div class="project__wrapper">
+      <script is:inline define:vars={{ heroAspect }}>
+        document.documentElement.style.setProperty("--p-project-hero-aspect", heroAspect);
+      </script>
+      <div
+        class:list={[
+          "project__hero",
+          thumbnail ? "js-project-hero-stage" : "project__hero--text",
+        ]}
+      >
+        {
+          thumbnail && (
+            <figure class="project__thumb">
+              <img
+                class="js-project-hero"
+                crossorigin="anonymous"
+                src={urlFor(thumbnail).width(MAIN_WIDTH).auto("format").url()}
+                width={MAIN_WIDTH}
+                height={heroHeight}
+                alt={thumbnail.alt ?? project.title}
+              />
+            </figure>
+          )
+        }
       </div>
-    <div class="project__body project__body--back">
-      <p class="project__back">
-        <a href={`${SITE.base}/`}>一覧に戻る</a>
-      </p>
+        <div class="project__head-wrapper">
+          <div class="project__head">
+            <h1 class="project__title">{project.title}</h1>
+          </div>
+             <div class="project__head-wrapper">
+              <ul class="project__image-list js-project-gallery">
+                {project.images && project.images.map((image) => (
+                  <li>
+                    <img
+                      class="js-project-gallery-item"
+                      crossorigin="anonymous"
+                      src={urlFor(image).width(1600).auto("format").url()}
+                      width={image.dimensions.width}
+                      height={image.dimensions.height}
+                      alt={image.alt ?? project.title}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          <div class="project__body">
+            <p class="project__back">
+              <a target="_blank" rel="noopener noreferrer" href={project.link ?? "#"}>View site</a>
+            </p>
+          </div>
+            <div class="project__detail-wrapper">
+              <section class="project__detail-section">
+                {outlineHtml && (
+                  <div class="project__outline-wrapper">
+                    <h3 class="project__outline-title project-detail__ttl">
+                     概要
+                    </h3>
+                    <div class="project__outline" set:html={outlineHtml} />
+                  </div>
+                )}
+              </section>
+              <section class="project-member project__detail-section">
+                <h3 class="project-member__ttl project-detail__ttl">
+                  Project Member
+                </h3>
+                <div class="project-member__list-wrapper">
+                  <ul class="project-member__list">
+                    {project.credits && project.credits.map((credit) => (
+                      <li class="project-member__item">
+                        <span class="project-member__role">{credit.role}</span>
+                        <span class="project-member__name">{credit.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </section>
+            </div>
+        </div>
+      <div class="project__body project__body--back">
+        <p class="project__back">
+          <a href={`${SITE.base}/`}>一覧に戻る</a>
+        </p>
+      </div>
     </div>
   </main>
 </Layout>
@@ -160,7 +159,8 @@ const outlineHtml = project.outline?.length
    画面幅 × 100svh のステージの中央に、板と同じ寸法で置く。
    実寸は project-hero.js が html の --p-project-hero-w / -h に書き込む。
    下の値は JS が動くまでの目安で、plate-metrics.js の
-   PLATE_WIDTH(1200px) / PLANE_FIT(0.82) と同じ式。
+   PLATE_WIDTH(1440px) / PLANE_FIT(0.82) と同じ式。
+   幅の基準は「本文の幅(95vw)」ではなく一覧の canvas と同じ画面幅なので vw で書く。
    比率(--p-project-hero-aspect)はプロジェクトごとに違うので、上のインラインスクリプトが
    元画像の比率を html に流し込む（流れてこなければ既定の 1.6 のまま）。
    ここは html に置く。板とメインビジュアルより内側で宣言すると
@@ -168,14 +168,15 @@ const outlineHtml = project.outline?.length
   -------------------------------------------------------------- */
   :global(html) {
     --p-project-hero-aspect: 1.6;
-    --p-project-hero-w: min(1200px, 82vw, calc(82svh * var(--p-project-hero-aspect)));
+    --p-project-hero-w: min(1440px, 82vw, calc(82svh * var(--p-project-hero-aspect)));
     --p-project-hero-h: calc(var(--p-project-hero-w) / var(--p-project-hero-aspect));
   }
 
-  /* スマホは板を大きく映す。plate-metrics.js の PLANE_FIT_NARROW / NARROW_STAGE_WIDTH と揃えること */
+  /* スマホは板を大きく映す。上限は本文カラム(.project__wrapper = 95vw)と同じ。
+     plate-metrics.js の PLANE_FIT_NARROW(0.95) / NARROW_STAGE_WIDTH(768) と揃えること */
   @media (max-width: 767px) {
     :global(html) {
-      --p-project-hero-w: min(1200px, 92vw, calc(92svh * var(--p-project-hero-aspect)));
+      --p-project-hero-w: min(1440px, 95vw, calc(95svh * var(--p-project-hero-aspect)));
     }
   }
 
@@ -186,9 +187,12 @@ const outlineHtml = project.outline?.length
     height: 100svh;
   }
 .project__head-wrapper{
-width: var(--p-project-hero-w);
+  @media (--md) {
+    width: var(--p-project-hero-w);
     margin-inline: auto;
+  }
 }
+
 
   .project__thumb {
     position: absolute;
@@ -350,5 +354,9 @@ width: var(--p-project-hero-w);
 .project__body--back{
   padding-top: 0;
   padding-bottom: clamp(56px, 12vw, 120px);
+}
+.project__wrapper{
+  width: 95vw;
+  margin-inline: auto;
 }
 </style>

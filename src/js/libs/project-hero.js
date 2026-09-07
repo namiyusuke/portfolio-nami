@@ -46,9 +46,16 @@ export const initProjectHero = () => {
     return;
   }
 
-  // ステージは一覧の canvas と同じ「画面幅 × 100svh」。同じ寸法・同じ比率から同じ答えが出る
+  // 一覧の canvas は「画面幅 × 100svh」。ステージ(.project__hero)は本文の幅(95vw)に
+  // 合わせて狭めてあるので、幅だけは画面幅を渡さないと同じ答えにならない。
+  // SP は板の幅が stageWidth × PLANE_FIT_NARROW で決まる(＝幅が効く)ので、
+  // ここでステージ幅を渡すとそのぶん(5%)小さくなり、遷移で画像の大きさが変わってしまう
   const apply = () => {
-    const { width, height } = foldedPlateSize(stage.offsetWidth, stage.offsetHeight, imageAspect(image));
+    const { width, height } = foldedPlateSize(
+      document.documentElement.clientWidth,
+      stage.offsetHeight,
+      imageAspect(image),
+    );
     // 一覧の canvas はビューポート上端に揃うので、板の上端はビューポートから見て
     // (100svh - 画像高) / 2。ステージはヘッダーのぶん下から始まるため、その分を引く
     const stageTop = stage.getBoundingClientRect().top + window.scrollY;

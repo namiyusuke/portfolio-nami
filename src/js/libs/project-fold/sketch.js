@@ -374,7 +374,6 @@ export default class ProjectFold {
         opacity = mixValue;
       }
       item.style.opacity = opacity;
-      // 見えていないタイトルのリンクは踏めないようにする
       item.style.pointerEvents = opacity > 0.5 ? "auto" : "none";
       item.classList.toggle("is-current", opacity > 0.5);
     });
@@ -511,9 +510,7 @@ export default class ProjectFold {
     this.playSwap();
   }
 
-  // メッシュ自体をクリックしたときだけ反応する。
-  // 折りたたみは頂点シェーダ側の変形なので、レイキャストの当たり判定は
-  // 変形前の平面（progress=0 の見た目）のまま
+  // (.p-project__link-label)から遷移させる
   setupPointer() {
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
@@ -540,15 +537,35 @@ export default class ProjectFold {
 
     this.onPointerDown = (event) => {
       updatePointer(event);
-      if (hitUv()) {
-        this.openCurrent();
+      const hit = hitUv();
+
+      // 指で触れただけで遷移しないよう、板からの遷移はマウスのときだけ
+      if (event.pointerType === "mouse") {
+        if (hit) {
+          this.openCurrent();
+        }
+        return;
+      }
+
+      this.setHover(hit);
+    };
+
+    // 指が離れたらホバーの膨らみは残さない(タッチには pointerleave が来ない)
+    this.onPointerUp = (event) => {
+      if (event.pointerType !== "mouse") {
+        this.setHover(null);
       }
     };
+
+    // スクロールが始まるとブラウザがポインタを持っていく(= pointerup は来ない)
+    this.onPointerCancel = () => this.setHover(null);
 
     this.onPointerLeave = () => this.setHover(null);
 
     el.addEventListener("pointermove", this.onPointerMove);
     el.addEventListener("pointerdown", this.onPointerDown);
+    el.addEventListener("pointerup", this.onPointerUp);
+    el.addEventListener("pointercancel", this.onPointerCancel);
     el.addEventListener("pointerleave", this.onPointerLeave);
   }
 
@@ -898,6 +915,8 @@ export default class ProjectFold {
     if (el && this.onPointerMove) {
       el.removeEventListener("pointermove", this.onPointerMove);
       el.removeEventListener("pointerdown", this.onPointerDown);
+      el.removeEventListener("pointerup", this.onPointerUp);
+      el.removeEventListener("pointercancel", this.onPointerCancel);
       el.removeEventListener("pointerleave", this.onPointerLeave);
     }
 
