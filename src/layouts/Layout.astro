@@ -25,6 +25,11 @@ const isProd = import.meta.env.PROD;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- JS が動く環境では最初の描画前に外す。JS 無効時だけ属性が残るので、
+         演出前提で隠している要素(FV のタイポグラフィなど)を静止表示に戻せる -->
+    <script is:inline>
+      document.documentElement.removeAttribute("data-script-disabled");
+    </script>
     <meta name="description" content={description} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />

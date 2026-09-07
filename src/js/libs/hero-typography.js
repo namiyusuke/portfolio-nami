@@ -39,7 +39,13 @@ export const initHeroTypography = () => {
   const srcG = stage?.querySelector(".js-hero-typography-src");
   const glyphsG = stage?.querySelector(".js-hero-typography-glyphs");
   const overlayG = stage?.querySelector(".js-hero-typography-overlay");
+  // CSS 側は既定で SVG を隠している(複製前の素のパスがちらつくため)。
+  // 演出の準備が整った時点、または準備できずに諦める時点で必ず戻す
+  const reveal = () => {
+    if (stage) stage.style.opacity = "1";
+  };
   if (!stage || !defs || !srcG || !glyphsG || !overlayG) {
+    reveal();
     return;
   }
 
@@ -428,6 +434,10 @@ export const initHeroTypography = () => {
   // ---------------------------------------------------------------
   // 起動
   // ---------------------------------------------------------------
+  // ここまで同期で走るので、この時点で見せても描画は挟まらない。
+  // 以降の分岐(静止表示・再訪・イントロ待ち)はどれも見えている前提で動く
+  reveal();
+
   // モーション低減時はイントロもマグネットも動かさず静止表示のまま
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     return;

@@ -59,4 +59,12 @@
     max-width: 700px;
     height: auto;
   }
+
+  /* hero-typography.js が字形を複製し終えるまでの数フレーム、フォールバックの
+     素のパスがイントロ越しにちらついて見えるので、JS が動く環境では既定で隠す。
+     複製と opacity:0 を敷き終えた時点で JS が opacity を戻す。
+     JS 無効時は data-script-disabled が残るため、そのまま静止表示になる */
+  :global(html:not([data-script-disabled])) .p-hero__typography-svg {
+    opacity: 0;
+  }
 </style>
