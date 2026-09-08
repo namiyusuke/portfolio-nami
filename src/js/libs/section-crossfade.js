@@ -11,6 +11,19 @@ let targets = null;
 
 const clamp01 = (value) => Math.min(Math.max(value, 0), 1);
 
+// セクション上端(top)の位置をフェードの 0〜1 に直す。
+// ステージは CSS 側で 100svh 固定なので、スマホで URL バーが隠れている間は
+// 画面の高さ(window.innerHeight = 100lvh)より 60〜100px ぶん低い。
+// つまり上端が 0 に届く前に「ステージが画面に収まりきった」状態になるため、
+// 終点を 0 にしたままだと背面のセクションが数%残って透けて見える。
+// ステージの下端が画面下端に届く位置を終点にして、そこで振り切らせる
+// (デスクトップは vh === stageHeight なので終点 0 = 従来どおり)
+const fadeProgress = (top, vh, stageHeight) => {
+  const end = Math.max(vh - stageHeight, 0);
+  const span = vh - end;
+  return span > 0 ? clamp01((vh - top) / span) : 1;
+};
+
 export const destroySectionCrossfade = () => {
   if (tick) {
     gsap.ticker.remove(tick);
@@ -58,11 +71,12 @@ export const initSectionCrossfade = () => {
     const vh = window.innerHeight;
 
     // MV → Animation:
-    // Animation セクション上端がビューポート下端(vh)から上端(0)に達するまでを 0〜1 に
+    // Animation セクション上端がビューポート下端(vh)から、
+    // ステージが画面に収まりきる位置に達するまでを 0〜1 に
     let enterFade = 1;
     if (heroTypography) {
       const top = animation.getBoundingClientRect().top;
-      enterFade = clamp01(1 - top / vh);
+      enterFade = fadeProgress(top, vh, animationStage.getBoundingClientRect().height);
 
       // タイトルはステージの中(sticky)にあるので、opacity はステージごと下で振る
 
@@ -75,7 +89,7 @@ export const initSectionCrossfade = () => {
     let exitFade = 0;
     if (project && projectStage) {
       const top = project.getBoundingClientRect().top;
-      exitFade = clamp01(1 - top / vh);
+      exitFade = fadeProgress(top, vh, projectStage.getBoundingClientRect().height);
 
       projectStage.style.opacity = exitFade < 1 ? String(exitFade) : "";
       // 透明なあいだはリンクの当たり判定ごと消しておく
