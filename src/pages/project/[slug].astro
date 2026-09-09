@@ -244,7 +244,12 @@ const outlineHtml = project.outline?.length
     margin-top: clamp(32px, 6vw, 60px);
     text-align: center;
   }
-
+   @media (--md) {
+  .project__back {
+    margin-top: 160px;
+    text-align: center;
+  }
+   }
   .project__back a {
     display: inline-flex;
     padding-inline: 2rem;
@@ -270,7 +275,14 @@ const outlineHtml = project.outline?.length
     font-size: clamp(18px, 4.5vw, 20px);
     line-height: 1.8;
     color: #fff;
+    margin-bottom: 30px;
   }
+   @media (--md) {
+      .project-detail__ttl {
+        min-width: 100px;
+        margin-bottom: 0;
+      }
+   }
   .project__outline {
     font-size: 16px;
     line-height: 1.8;
@@ -347,9 +359,6 @@ const outlineHtml = project.outline?.length
 @media (--md) {
   .project__outline{
     width: min(calc(1000 / 1440 * 100vw), 1000px);
-  }
-  .project-member__list-wrapper{
-    width: min(calc(700 / 1440 * 100vw), 700px);
   }
   .project-member__item{
     flex-direction: row;
