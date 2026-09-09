@@ -733,6 +733,22 @@ body {
 }
 
 /* --------------------------------------------------------------
+ テキストマグネット(text-magnet.js)
+ .js-text-magnet のテキストを1文字ずつ span に分解してカーソルで押しのける。
+ span は実行時に JS が挿すため Astro のスコープ属性が付かない。
+ コンポーネント側の <style> では当たらないので、ここへ置く
+-------------------------------------------------------------- */
+.c-magnet__char {
+  display: inline-block;
+  /* 語中の空白が inline-block で潰れないようにする */
+  white-space: pre;
+}
+/* 合成レイヤーは効いている見出しの間だけ持たせる(常時だと全文字が層になる) */
+.is-magnet-active > .c-magnet__char {
+  will-change: transform;
+}
+
+/* --------------------------------------------------------------
  About オーバーレイ(紙めくり)
  ヘッダーの About を押すと、project-fold と同じめくれの紙(WebGPU の板)が
  画面上から降りてきて中央に着地する。着地すると JS が .is-landed を付け、
@@ -939,5 +955,10 @@ body {
   .c-about-fold.is-plain .c-about-fold__paper {
     transform: none;
     transition: opacity 0.3s ease;
+  }
+}
+.project__outline-wrapper{
+  @media (min-width: 767px) {
+    display: flex;
   }
 }

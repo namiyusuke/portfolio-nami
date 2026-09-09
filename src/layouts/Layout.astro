@@ -56,7 +56,11 @@ const isProd = import.meta.env.PROD;
       <div class="c-about-fold__paper js-about-paper">
         <button class="c-about-fold__close js-about-close" type="button" aria-label="閉じる">×</button>
         <div class="c-about-fold__inner">
-          <h2 class="c-about-fold__title">About</h2>
+          <h2
+            class="c-about-fold__title js-text-magnet"
+            data-magnet-radius="140"
+            data-magnet-force="22"
+          >About</h2>
           <div class="c-about-fold__inner-content">
             <h3 class="c-about-fold__name">
               <span class="c-about-fold__name-en">Yusuke Namikawa</span>

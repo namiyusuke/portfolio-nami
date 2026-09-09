@@ -2,6 +2,7 @@ import "swiper/css";
 import { initAboutFold } from "./libs/about-fold.js";
 import { initAnimationSlider } from "./libs/animation-slider.js";
 import { initGlobalNav } from "./libs/global-nav.js";
+import { initTextMagnet } from "./libs/text-magnet.js";
 import { initHeaderWeather } from "./libs/header-weather.js";
 import { initHeroIntro } from "./libs/hero-intro.js";
 import { initHeroSnap } from "./libs/hero-snap.js";
@@ -60,6 +61,9 @@ registerPageInit(() => {
   initProjectHero();
   // 詳細ページの画像ギャラリー。下端が捲れた板をスクロールで平らに戻す
   initProjectGallery();
+  // .js-text-magnet を文書全体から拾い直す。ヘッダーや About は #swup の外で
+  // 生き続けるが、分解済みの span をそのまま拾うので二重には割れない
+  initTextMagnet();
 });
 
 initSwup();

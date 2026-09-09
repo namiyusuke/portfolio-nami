@@ -263,19 +263,14 @@ const outlineHtml = project.outline?.length
     margin-top: clamp(2rem, 5vw, 4rem);
   }
 
-  /* WebGL の板が描ける状態になった画像は DOM 側を隠す(レイアウトはそのまま残す)。
-     板は project-gallery.js が同じ矩形に描くので、見た目上は入れ替わるだけ */
   .project__image-list img.is-webgl {
     visibility: hidden;
   }
   .project-detail__ttl {
-    margin-bottom: clamp(1.2rem, 4vw, 2.4rem);
     font-size: clamp(18px, 4.5vw, 20px);
     line-height: 1.8;
     color: #fff;
   }
-
-  /* 概要はリッチテキスト。Studio 側で許可した要素だけ面倒を見る */
   .project__outline {
     font-size: 16px;
     line-height: 1.8;
@@ -310,10 +305,19 @@ const outlineHtml = project.outline?.length
 .project-member{
   color: #fff;
 }
-.project__detail-section + .project__detail-section{
-  margin-top: clamp(5rem, 13vw, 13rem);
+@media (--md) {
+  .project-member{
+    display: flex;
+  }
 }
-
+.project__detail-section + .project__detail-section{
+  margin-top: 80px;
+}
+@media (--md) {
+  .project__detail-section + .project__detail-section{
+  margin-top: 100px;
+}
+}
 /* SP は本文カラムを目一杯使い、md 以上で右寄せの狭いカラムへ戻す */
 .project__outline,
 .project-member__list-wrapper{
@@ -330,11 +334,16 @@ const outlineHtml = project.outline?.length
   margin-top: clamp(1.2rem, 3vw, 2rem);
 }
 .project__detail-wrapper{
-  margin-top: clamp(96px, 17vw, 240px);
-  padding-top: clamp(96px, 17vw, 240px);
+  margin-top: 90px;
+  padding-top: 90px;
   border-top: 1px solid #fff;
 }
-
+@media (--md) {
+  .project__detail-wrapper{
+  margin-top: 160px;
+  padding-top: 100px;
+}
+}
 @media (--md) {
   .project__outline{
     width: min(calc(1000 / 1440 * 100vw), 1000px);

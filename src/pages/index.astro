@@ -54,7 +54,11 @@ const introTextures = [...projects, ...animations]
     <div class="p-animation__stage js-animation-stage">
       <!-- タイトルは sticky なステージの中に置いて、セクション中は画面に固定する。
            前後のクロスフェードはステージごと section-crossfade.js が opacity を振る -->
-      <h2 class="p-animation__title p-project__title js-animation-title">Animation</h2>
+      <h2
+        class="p-animation__title p-project__title js-animation-title js-text-magnet"
+        data-magnet-radius="180"
+        data-magnet-force="28"
+      >Animation</h2>
       <div class="p-animation__canvas js-animation-canvas" aria-hidden="true"></div>
       <ul class="p-animation__list">
         {animations.map((animation) => (
@@ -88,7 +92,11 @@ const introTextures = [...projects, ...animations]
   </section>
   <section id="projects" class="p-project js-project-fold">
     <div class="p-project__stage js-project-stage">
-       <h2 class="p-project__title">projects</h2>
+       <h2
+         class="p-project__title js-text-magnet"
+         data-magnet-radius="180"
+         data-magnet-force="28"
+       >projects</h2>
       <div class="p-project__canvas js-project-canvas" aria-hidden="true"></div>
       <ul class="p-project__list">
         {projects.map((project) => (

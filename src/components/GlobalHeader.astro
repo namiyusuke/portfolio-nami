@@ -34,22 +34,22 @@ const navLists = [
   <nav id="global-nav" class="header-nav js-nav">
     <ul class="header-nav-list">
       <li class="header-nav-item">
-        <a href={`${SITE.base}/`}>
+        <a class="js-text-magnet" href={`${SITE.base}/`}>
           Top
         </a>
       </li>
       <li class="header-nav-item">
-        <a href={`${SITE.base}/#animation`}>
+        <a class="js-text-magnet" href={`${SITE.base}/#animation`}>
           Animation
         </a>
       </li>
       <li class="header-nav-item">
-        <a href={`${SITE.base}/#projects`}>
+        <a class="js-text-magnet" href={`${SITE.base}/#projects`}>
          Projects
         </a>
       </li>
       <li class="header-nav-item">
-        <a href="#" class="js-about-open" data-no-swup>
+        <a href="#" class="js-about-open js-text-magnet" data-no-swup>
          About
         </a>
       </li>
@@ -156,12 +156,8 @@ const navLists = [
   display: grid;
   gap: 26px;
 }
-  .header-nav-item{
-    overflow: hidden;
-  }
   .header-nav-item a{
     translate: 0 100%;
-    overflow: hidden;
     transition:
       translate 0.8s var(--ease-in-out-cubic);
   }
@@ -220,6 +216,7 @@ const navLists = [
       opacity: 1;
       translate: none;
       transition: none;
+      overflow: visible;
     }
     .header-nav-item a {
       padding-block: 0;
