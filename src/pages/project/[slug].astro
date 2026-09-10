@@ -360,7 +360,6 @@ const outlineHtml = project.outline?.length
 }
 }
 @media (--md) {
-
   .project__outline{
     width: min(calc(1000 / 1440 * 100vw), 1000px);
   }
@@ -381,7 +380,13 @@ const outlineHtml = project.outline?.length
   padding-bottom: clamp(56px, 12vw, 120px);
 }
 .project__wrapper{
+  width: 90vw;
+  margin-inline: auto;
+}
+@media (--md) {
+.project__wrapper{
   width: 95vw;
   margin-inline: auto;
+}
 }
 </style>
