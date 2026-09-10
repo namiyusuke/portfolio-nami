@@ -172,7 +172,8 @@ const outlineHtml = project.outline?.length
     --p-project-hero-h: calc(var(--p-project-hero-w) / var(--p-project-hero-aspect));
   }
 
-  /* スマホは板を大きく映す。上限は本文カラム(.project__wrapper = 95vw)と同じ。
+  /* スマホは板を大きく映す。本文カラム(.project__wrapper = SP は 90vw)より広いので
+     .project__thumb はカラムではなく画面中央基準で置いている。
      plate-metrics.js の PLANE_FIT_NARROW(0.95) / NARROW_STAGE_WIDTH(768) と揃えること */
   @media (max-width: 767px) {
     :global(html) {
@@ -182,9 +183,25 @@ const outlineHtml = project.outline?.length
 
   .project__hero {
     --p-project-hero-top: calc((100svh - var(--p-project-hero-h)) / 2);
+    /* 画像の下に残す余白 */
+    --p-project-hero-gap: clamp(40px, 8vw, 120px);
 
     position: relative;
     height: 100svh;
+  }
+
+  /* 画像は 100svh のステージの中央にしか置けない(板が着地する位置なので動かせない)。
+     そのぶん画面が縦長だと画像の下に画面の半分近い余白が残るので、負のマージンで
+     次のコンテンツを引き上げ、余白を --p-project-hero-gap まで詰める。
+     height は 100svh のままなので、板の位置計算(project-hero.js の stage.offsetHeight)は
+     いっさい変わらない。min(0px, …) にしてあるので余白が足りないときは何もしない */
+  .project__hero:not(.project__hero--text) {
+    margin-bottom: min(
+      0px,
+      calc(
+        var(--p-project-hero-top) + var(--p-project-hero-h) + var(--p-project-hero-gap) - 100svh
+      )
+    );
   }
 .project__head-wrapper{
   @media (--md) {
@@ -194,12 +211,16 @@ const outlineHtml = project.outline?.length
 }
 
 
+  /* 板は画面幅の canvas の中央に折り畳まれるので、こちらも「画面の中央」に置く。
+     inset-inline: 0 + margin-inline: auto だと本文カラム(.project__wrapper)の中での
+     中央寄せになり、hero 幅がカラム幅を超えたときに auto マージンが 0 に潰れて
+     左端へ寄る(＝遷移で画像が横にずれる)。left: 50% なら幅に関係なく画面中央に揃う */
   .project__thumb {
     position: absolute;
-    inset-inline: 0;
+    left: 50%;
+    translate: -50%;
     top: var(--p-project-hero-top);
     width: var(--p-project-hero-w);
-    margin-inline: auto;
   }
 
   .project__thumb img {

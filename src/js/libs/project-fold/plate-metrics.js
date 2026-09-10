@@ -5,8 +5,8 @@ export const DEFAULT_ASPECT = 1.6;
 // 板が画面幅・画面高に対して占める最大比率(左右上下の余白を確保する)
 export const PLANE_FIT = 0.82;
 // スマホは画面が狭いぶん板が小さく映りすぎるので、余白を詰めて大きく取る。
-// ただし詳細ページの本文カラム(.project__wrapper = 95vw)より大きくすると
-// メインビジュアルが画面幅を越えるので、上限はその 95% に合わせる。
+// 詳細ページのメインビジュアルは本文カラム(.project__wrapper = SP は 90vw)より広くなるが、
+// 画面中央基準で置いているので画面幅を越えなければ問題ない(＝ここは 1.0 未満であること)。
 // [slug].astro のフォールバック CSS(--p-project-hero-w)も同じ切り替えを持つので、値を揃えること
 export const PLANE_FIT_NARROW = 0.95;
 export const NARROW_STAGE_WIDTH = 768;
