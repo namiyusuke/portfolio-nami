@@ -72,6 +72,8 @@ const introTextures = [...projects, ...animations]
             <a
               class="p-animation__link"
               href={animation.link}
+              target="_blank"
+              rel="noopener noreferrer"
             >
               <h3 class="p-animation__list-item-title">{animation.title}</h3>
               {animation.thumbnail && (
@@ -136,7 +138,12 @@ const introTextures = [...projects, ...animations]
   }
   .p-hero__intro {
     position: fixed;
-    inset: 0;
+    /* fixed の基準は初期包含ブロック(＝アドレスバーが引っ込んだ状態の高さ)なので、
+       inset: 0 だと 100lvh になり、バーが出ている初回表示では下端がバーの裏に隠れる。
+       canvas は container の実寸で作るため、レンダラごと見切れる。
+       他のセクションと同じ 100svh に揃えて、バーが出ていても収まるようにする */
+    inset: 0 0 auto;
+    height: 100svh;
     z-index: 100;
     display: block;
     pointer-events: none;
