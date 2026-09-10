@@ -105,7 +105,7 @@ const outlineHtml = project.outline?.length
               </ul>
             </div>
           <div class="project__body">
-            <p class="project__back">
+            <p class="project__back project__view">
               <a target="_blank" rel="noopener noreferrer" href={project.link ?? "#"}>View site</a>
             </p>
           </div>
@@ -249,6 +249,9 @@ const outlineHtml = project.outline?.length
     margin-top: 160px;
     text-align: center;
   }
+  .project__view{
+    margin-top: 0px;
+  }
    }
   .project__back a {
     display: inline-flex;
@@ -357,6 +360,7 @@ const outlineHtml = project.outline?.length
 }
 }
 @media (--md) {
+
   .project__outline{
     width: min(calc(1000 / 1440 * 100vw), 1000px);
   }
@@ -367,6 +371,9 @@ const outlineHtml = project.outline?.length
   .project-member__role{
     width: 240px;
     flex-shrink: 0;
+  }
+    .project-member__ttl{
+      min-width: 300px;
   }
 }
 .project__body--back{
