@@ -820,13 +820,26 @@ body {
   width: 44px;
   height: 44px;
   padding: 0;
-  font-size: 28px;
-  line-height: 1;
   color: inherit;
   background: none;
   border: none;
   cursor: pointer;
   transition: opacity 0.3s ease;
+}
+/* 擬似要素2本を重ねて細いバツにする */
+.c-about-fold__close::before,
+.c-about-fold__close::after {
+  content: '';
+  grid-area: 1 / 1;
+  width: 22px;
+  height: 1px;
+  background-color: currentColor;
+}
+.c-about-fold__close::before {
+  rotate: 45deg;
+}
+.c-about-fold__close::after {
+  rotate: -45deg;
 }
 .c-about-fold__close:hover {
   opacity: 0.5;
@@ -843,7 +856,7 @@ body {
 .c-about-fold__title {
   font-family: var(--ff-display);
   font-size: clamp(20px, calc(128 / 1440 * 100vw), 128px);
-  margin-bottom: clamp(20px, 4vw, 48px);
+  margin-bottom: clamp(20px, 3vw, 38px);
 }
 }
 .c-about-fold__name {
@@ -931,6 +944,7 @@ body {
   padding-block: 8px;
   padding-inline: 20px;
   width: max-content;
+  font-weight: 400;
 }
 .c-about-fold__sns li a:hover {
   opacity: 0.5;
