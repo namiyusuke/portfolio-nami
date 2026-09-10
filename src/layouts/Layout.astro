@@ -33,7 +33,7 @@ const isProd = import.meta.env.PROD;
     <meta name="description" content={description} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content={`${SITE.url}${SITE.base}/ogp.png`} />
+    <meta property="og:image" content={`${SITE.url}${SITE.base}/ogp.jpg`} />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="ja_JP" />
     <meta property="og:site_name" content={SITE.name} />
@@ -45,7 +45,7 @@ const isProd = import.meta.env.PROD;
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Italiana&display=swap" rel="stylesheet">
     <link rel="icon" href={`${SITE.base}/favicon.ico`} sizes="32x32" />
-    <link rel="icon" href={`${SITE.base}/favicon.svg`} type="image/svg+xml" />
+    <link rel="apple-touch-icon" href={`${SITE.base}/apple-icon.png`} />
     {SITE.trackingId && isProd && <GoogleAnalytics />}
   </head>
   <body>
