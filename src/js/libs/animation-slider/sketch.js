@@ -17,8 +17,9 @@ const ROTATION_ANGLE = 32;
 const FADE_ANGLE = ROTATION_ANGLE / 2;
 // 中央からこの距離を超えた板は描画しない
 const CULL_DISTANCE = UNITS_PER_SLIDE * 1.5;
-// 板の素の横幅（PlaneGeometry の width と同じ値）
+// 板の素の寸法（PlaneGeometry に渡す値）
 const PLANE_WIDTH = 2;
+const PLANE_HEIGHT = 1;
 // 可視範囲の横幅に対して板が占めてよい最大割合。
 // 縦長画面では板がこの幅に収まるまで縮む（横長画面では等倍のまま）。
 // 1.0 でちょうど全幅。端は捻れ（rotateY）で奥に逃げるため画面端には張り付かない。
@@ -89,7 +90,13 @@ export default class AnimationSlider {
             // 3乗にして、フェード幅が狭くてもセンター付近は濃いまま残す
             const rotation = gsap.getProperty(item, "rotationX");
             const distance = Math.min(Math.abs(rotation) / FADE_ANGLE, 1);
-            item.style.opacity = 1 - distance ** 3;
+            const opacity = 1 - distance ** 3;
+            item.style.opacity = opacity;
+            // 項目は grid-area: 1 / 1 で重なっているので、当たり判定を持たせるのは
+            // センターの1枚だけ。隣とは常に ROTATION_ANGLE(= FADE_ANGLE * 2)離れており、
+            // |rotation| < FADE_ANGLE ＝ opacity > 0 を満たす板は同時に1枚しかない。
+            // 全項目を押せるままにすると、一番手前(＝最後の項目)のリンクに必ず飛ぶ
+            item.style.pointerEvents = opacity > 0 ? "auto" : "none";
           },
         },
         "<",
@@ -99,7 +106,7 @@ export default class AnimationSlider {
 
   addObjects(textures, videos) {
     // 板はすべて原点に置き、縦位置はシェーダの progress で動かす
-    this.geometry = new THREE.PlaneGeometry(2, 1, 100, 100);
+    this.geometry = new THREE.PlaneGeometry(PLANE_WIDTH, PLANE_HEIGHT, 100, 100);
     this.meshes = textures.map((url, index) => {
       const material = this.createMaterial(url, index);
       // 動画つきの項目は、読み込みが済んだ時点で静止画テクスチャと差し替わる
@@ -111,9 +118,7 @@ export default class AnimationSlider {
     });
   }
 
-  // サムネイル動画をテクスチャに流し込むための video 要素。
-  // DOM には挿さず、貼り替えは loadeddata まで待つ（先に貼ると最初の数フレームが真っ黒になる）。
-  // 再生の開始・停止は render() が板の可視状態に合わせて行う。
+
   attachVideo(material, url) {
     const video = document.createElement("video");
     // 画像テクスチャと同じく CORS 必須。src より先に立てる
@@ -147,8 +152,6 @@ export default class AnimationSlider {
 
   createMaterial(url, index) {
     const texture = this.loader.load(url);
-    // texture.colorSpace = THREE.SRGBColorSpace;
-
     return new THREE.ShaderMaterial({
       side: THREE.DoubleSide,
       transparent: true,
@@ -157,7 +160,6 @@ export default class AnimationSlider {
       uniforms: {
         progress: { value: 0 },
         uTexture: { value: texture },
-        // 端のゆらぎ用。uIndex は板ごとに揺れの位相をずらすための定数
         uTime: { value: 0 },
         uIndex: { value: index },
       },
@@ -179,10 +181,6 @@ export default class AnimationSlider {
     this.updateScale();
   }
 
-  // 縦長画面では板が可視範囲の横幅からはみ出すため、
-  // MAX_WIDTH_RATIO に収まるサイズまで全体を等倍で縮める。
-  // シェーダの縦送り（progress）はローカル座標に足すのでスケールごと縮み、
-  // 板同士の間隔・回転の見た目は崩れない。
   updateScale() {
     const visibleHeight =
       2 * this.camera.position.z * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2));
@@ -191,14 +189,23 @@ export default class AnimationSlider {
     for (const { mesh } of this.meshes) {
       mesh.scale.setScalar(scale);
     }
+
+    // 中央の板が画面上で占める大きさ(px)を CSS 変数で渡し、リンクの当たり判定を
+    // テクスチャと同じ矩形にする。センターの板は progress = 0 ＝捻れも傾きも 0 で
+    // カメラに正対しているので、ワールド幅を可視幅で割るだけで実寸が出る。
+    this.section.style.setProperty(
+      "--p-animation-plate-w",
+      `${Math.round(((PLANE_WIDTH * scale) / visibleWidth) * this.width)}px`,
+    );
+    this.section.style.setProperty(
+      "--p-animation-plate-h",
+      `${Math.round(((PLANE_HEIGHT * scale) / visibleHeight) * this.height)}px`,
+    );
   }
 
   // セクションの sticky 区間を 0〜1 に正規化する
   getProgress() {
     const rect = this.section.getBoundingClientRect();
-    // 分母は「セクション高 − sticky で止まっている高さ」。
-    // sticky なステージは CSS で 100lvh なので、アドレスバーの開閉で変わる
-    // window.innerHeight ではなくステージ(= container)の実寸と突き合わせる
     const distance = rect.height - (this.height || window.innerHeight);
     if (distance <= 0) {
       return 0;
@@ -264,6 +271,14 @@ export default class AnimationSlider {
     window.removeEventListener("resize", this.onResize);
     this.timeline.kill();
     gsap.set(this.items, { clearProps: "all" });
+    // opacity / pointer-events は gsap 経由ではなく直接書いているので clearProps では消えない。
+    // "none" を残すと、素のリスト表示に落ちたときにリンクが押せなくなる
+    for (const item of this.items) {
+      item.style.removeProperty("opacity");
+      item.style.removeProperty("pointer-events");
+    }
+    this.section.style.removeProperty("--p-animation-plate-w");
+    this.section.style.removeProperty("--p-animation-plate-h");
 
     for (const { mesh, material, video } of this.meshes) {
       this.scene.remove(mesh);
@@ -271,14 +286,12 @@ export default class AnimationSlider {
       material.dispose();
 
       if (video) {
-        // src を外して load() し直さないと、破棄後もダウンロードが続くことがある
         video.pause();
         video.removeAttribute("src");
         video.load();
       }
     }
     this.geometry.dispose();
-
     this.renderer.dispose();
     this.renderer.forceContextLoss();
     this.renderer.domElement.remove();

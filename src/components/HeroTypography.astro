@@ -60,6 +60,11 @@
     width: 100%;
     max-width: 700px;
     height: auto;
+    /* p-hero は Animation との重なりでリンクを塞がないよう pointer-events: none。
+       マグネット演出(hero-typography.js)はこの svg で pointermove を拾うので、
+       ここだけ受け取り直す。クロスフェード後は親が visibility: hidden になるため、
+       auto でも Animation 側の当たり判定は邪魔しない */
+    pointer-events: auto;
   }
 
   /* hero-typography.js が字形を複製し終えるまでの数フレーム、フォールバックの

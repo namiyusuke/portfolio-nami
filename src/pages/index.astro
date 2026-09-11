@@ -171,24 +171,20 @@ const introTextures = [...projects, ...animations]
   .p-hero__intro-canvas :global(canvas) {
     display: block;
   }
-  /* --------------------------------------------------------------
-   Animation セクション
-   既定は素のリスト。WebGL が使える場合だけ JS が .is-webgl を付け、
-   sticky + canvas のスライダー表示に切り替える。
-  -------------------------------------------------------------- */
-  .p-animation {
+    .p-animation {
     position: relative;
   }
-
-  /* スライド枚数ぶん（+ 最後の1枚が抜けるぶん）のスクロール量を確保する。
-     WebGL 表示の区間はステージ・重なり・スクロール長をすべて lvh で統一する。
-     svh(アドレスバーが出ている高さ)だと、バーが引っ込んだときにステージが
-     画面より低くなり canvas の下端が見切れるため */
-  .p-animation.is-webgl {
+    .p-animation.is-webgl {
     height: calc((var(--p-animation-count) + 1) * 80lvh);
   }
   .p-hero:has(+ .p-animation.is-webgl) {
     height: 200lvh;
+    /* 下の Animation と 100lvh 重なる。背景が透明でも box はポインタを拾うので、
+       そのままだと手前(z-index: 100)から板のリンクの当たり判定を丸ごと奪う。
+       スナップ着地位置(Animation の上端が画面上端 = 1枚目が正面)はこの重なりの
+       ど真ん中なので、1枚目のリンクだけが押せなくなる。
+       受け取るのは実体のあるタイポグラフィだけにする */
+    pointer-events: none;
   }
 
   .p-hero + .p-animation.is-webgl {
@@ -250,6 +246,15 @@ const introTextures = [...projects, ...animations]
     grid-area: 1 / 1;
     max-width: 100%;
     backface-visibility: hidden;
+  }
+
+  .is-webgl .p-animation__link {
+    display: grid;
+    place-items: center;
+    width: var(--p-animation-plate-w, auto);
+    height: var(--p-animation-plate-h, auto);
+    color: inherit;
+    text-decoration: none;
   }
 
   .is-webgl .p-animation__list-item-title {
