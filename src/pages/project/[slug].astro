@@ -153,19 +153,6 @@ const outlineHtml = project.outline?.length
     color: #282727;
   }
 
-  /* --------------------------------------------------------------
-   メインビジュアル
-   一覧の板(WebGL)がめくり終わった位置・大きさにそのまま重なるよう、
-   画面幅 × 100svh のステージの中央に、板と同じ寸法で置く。
-   実寸は project-hero.js が html の --p-project-hero-w / -h に書き込む。
-   下の値は JS が動くまでの目安で、plate-metrics.js の
-   PLATE_WIDTH(1440px) / PLANE_FIT(0.82) と同じ式。
-   幅の基準は「本文の幅(95vw)」ではなく一覧の canvas と同じ画面幅なので vw で書く。
-   比率(--p-project-hero-aspect)はプロジェクトごとに違うので、上のインラインスクリプトが
-   元画像の比率を html に流し込む（流れてこなければ既定の 1.6 のまま）。
-   ここは html に置く。板とメインビジュアルより内側で宣言すると
-   JS が書いた値を上書きしてしまい、遷移で画像がズレる。
-  -------------------------------------------------------------- */
   :global(html) {
     --p-project-hero-aspect: 1.6;
     --p-project-hero-w: min(1440px, 82vw, calc(82svh * var(--p-project-hero-aspect)));

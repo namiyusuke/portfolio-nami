@@ -196,7 +196,10 @@ export default class AnimationSlider {
   // セクションの sticky 区間を 0〜1 に正規化する
   getProgress() {
     const rect = this.section.getBoundingClientRect();
-    const distance = rect.height - window.innerHeight;
+    // 分母は「セクション高 − sticky で止まっている高さ」。
+    // sticky なステージは CSS で 100lvh なので、アドレスバーの開閉で変わる
+    // window.innerHeight ではなくステージ(= container)の実寸と突き合わせる
+    const distance = rect.height - (this.height || window.innerHeight);
     if (distance <= 0) {
       return 0;
     }

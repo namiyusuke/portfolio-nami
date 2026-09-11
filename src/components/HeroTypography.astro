@@ -40,14 +40,16 @@
    FV のタイポグラフィ
    イントロ(hero-intro)のオーバーレイが被っている間は背後に隠れており、
    フェードアウト後に hero-typography.js がイントロ演出つきで見せる。
-   p-hero が 200svh(スクロール区間)でも最初の1画面に留まるよう sticky。
+   p-hero が 200lvh(スクロール区間)でも最初の1画面に留まるよう sticky。
   -------------------------------------------------------------- */
   .p-hero__typography {
     position: sticky;
     top: 0;
     display: grid;
     place-items: center;
-    height: 100svh;
+    /* Animation ステージ(100lvh)と同じ箱にして、クロスフェード中に
+       MV テキストと Animation の見出しが同じ中心で入れ替わるようにする */
+    height: 100lvh;
     padding-inline: var(--offset-inline);
     /* MV → Animation のクロスフェード中は section-crossfade.js が毎フレーム opacity を書く */
     will-change: opacity;

@@ -133,15 +133,16 @@ const introTextures = [...projects, ...animations]
   .p-hero {
     position: relative;
     inset: 0;
-    height: 100svh;
+    height: 100lvh;
     z-index: 100;
   }
   .p-hero__intro {
     position: fixed;
-    /* fixed の基準は初期包含ブロック(＝アドレスバーが引っ込んだ状態の高さ)なので、
-       inset: 0 だと 100lvh になり、バーが出ている初回表示では下端がバーの裏に隠れる。
-       canvas は container の実寸で作るため、レンダラごと見切れる。
-       他のセクションと同じ 100svh に揃えて、バーが出ていても収まるようにする */
+    /* ここだけ svh。fixed の基準は初期包含ブロック(＝アドレスバーが引っ込んだ状態の高さ)
+       なので、inset: 0 だと 100lvh になり、バーが出ている初回表示では下端がバーの裏に隠れ、
+       canvas は container の実寸で作るためレンダラごと見切れる。
+       イントロが流れるのはページ最上部＝バーが必ず出ている場面なので、
+       スクロール区間の各ステージ(lvh)とは違い svh のほうが実ビューポートと一致する */
     inset: 0 0 auto;
     height: 100svh;
     z-index: 100;
@@ -179,23 +180,26 @@ const introTextures = [...projects, ...animations]
     position: relative;
   }
 
-  /* スライド枚数ぶん（+ 最後の1枚が抜けるぶん）のスクロール量を確保する */
+  /* スライド枚数ぶん（+ 最後の1枚が抜けるぶん）のスクロール量を確保する。
+     WebGL 表示の区間はステージ・重なり・スクロール長をすべて lvh で統一する。
+     svh(アドレスバーが出ている高さ)だと、バーが引っ込んだときにステージが
+     画面より低くなり canvas の下端が見切れるため */
   .p-animation.is-webgl {
-    height: calc((var(--p-animation-count) + 1) * 80svh);
+    height: calc((var(--p-animation-count) + 1) * 80lvh);
   }
   .p-hero:has(+ .p-animation.is-webgl) {
-    height: 200svh;
+    height: 200lvh;
   }
 
   .p-hero + .p-animation.is-webgl {
-    margin-top: -100svh;
+    margin-top: -100lvh;
   }
   .p-animation.is-webgl:has(+ .p-project.is-webgl) {
-    height: calc((var(--p-animation-count) + 1) * 80svh + 100svh);
+    height: calc((var(--p-animation-count) + 1) * 80lvh + 100lvh);
   }
 
   .p-animation.is-webgl + .p-project.is-webgl {
-    margin-top: -100svh;
+    margin-top: -100lvh;
   }
   .p-animation__title {
     color: #fff;
@@ -212,7 +216,7 @@ const introTextures = [...projects, ...animations]
   .is-webgl .p-animation__stage {
     position: sticky;
     top: 0;
-    height: 100svh;
+    height: 100lvh;
     background-color: transparent;
     /* クロスフェード中は section-crossfade.js が毎フレーム opacity を書く */
     will-change: opacity;
@@ -321,7 +325,7 @@ const introTextures = [...projects, ...animations]
   /* 板の縁は alpha で抜くので、背面はサイト共通の暗い背景を透かす */
   .is-webgl .p-project__stage {
     position: relative;
-    height: 100svh;
+    height: 100lvh;
     background-color: transparent;
     will-change: opacity;
   }

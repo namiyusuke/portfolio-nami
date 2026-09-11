@@ -82,7 +82,7 @@ const introTextures = [...projects, ...animations]
   .p-hero {
     position: relative;
     inset: 0;
-    height: 100svh;
+    height: 100lvh;
   }
 
   /* --------------------------------------------------------------
@@ -127,22 +127,24 @@ const introTextures = [...projects, ...animations]
     position: relative;
   }
 
-  /* スライド枚数ぶん（+ 最後の1枚が抜けるぶん）のスクロール量を確保する */
+  /* スライド枚数ぶん（+ 最後の1枚が抜けるぶん）のスクロール量を確保する。
+     WebGL 表示の区間はステージ・重なり・スクロール長をすべて lvh で統一する
+     (svh だとアドレスバーが引っ込んだときに canvas の下端が見切れる) */
   .p-animation.is-webgl {
-    height: calc((var(--p-animation-count) + 1) * 80svh);
+    height: calc((var(--p-animation-count) + 1) * 80lvh);
   }
 
   /* Projects へのクロスフェード用の重なり。
      Animation 側に 1 画面ぶん足し、Projects 側を同じだけ引き上げて
-     100svh の遷移区間を作る（Animation の sticky はこの区間中も効いている）。
+     100lvh の遷移区間を作る（Animation の sticky はこの区間中も効いている）。
      区間中の opacity と Projects ステージの固定は section-crossfade.js が
      毎フレーム駆動し、フェード完了と同時に通常フローへ着地する */
   .p-animation.is-webgl:has(+ .p-project.is-webgl) {
-    height: calc((var(--p-animation-count) + 1) * 80svh + 100svh);
+    height: calc((var(--p-animation-count) + 1) * 80lvh + 100lvh);
   }
 
   .p-animation.is-webgl + .p-project.is-webgl {
-    margin-top: -100svh;
+    margin-top: -100lvh;
   }
 
   .p-animation__title {
@@ -154,7 +156,7 @@ const introTextures = [...projects, ...animations]
   .is-webgl .p-animation__stage {
     position: sticky;
     top: 0;
-    height: 100svh;
+    height: 100lvh;
     background-color: transparent;
     /* クロスフェード中は section-crossfade.js が毎フレーム opacity を書く */
     will-change: opacity;
@@ -267,7 +269,7 @@ const introTextures = [...projects, ...animations]
   /* 板の縁は alpha で抜くので、背面はサイト共通の暗い背景を透かす */
   .is-webgl .p-project__stage {
     position: relative;
-    height: 100svh;
+    height: 100lvh;
     background-color: transparent;
     /* クロスフェード中は section-crossfade.js が毎フレーム transform / opacity を書く */
     will-change: transform, opacity;
