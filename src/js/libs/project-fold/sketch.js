@@ -459,9 +459,6 @@ export default class ProjectFold {
     // 時間で溜まるぶん。何も触らなければ hold 秒ちょうどで 1 に届く
     const byTime = this.params.hold > 0 ? seconds / this.params.hold : 1;
 
-    // スクロールで溜まるぶん。1枚ぶん = 画面高 × scrollPerSwap。
-    // Lenis の慣性でひと弾き数百 px 動くので、1フレームで進める幅に上限を掛け、
-    // 勢いよく回しても振り切るまでに必ず SWAP_MIN_SECONDS ぶんの時間がかかるようにする
     const span = window.innerHeight * this.params.scrollPerSwap;
     const limit = seconds / SWAP_MIN_SECONDS;
     const byScroll = span > 0 ? Math.min(Math.max(delta / span, -limit), limit) : 0;

@@ -21,8 +21,6 @@ const animations = await getAnimations();
 const projects = await getProjects();
 console.log(projects);
 
-// イントロで奥へ流すカードのテクスチャ。project / animation のサムネから最大10枚
-// 板(1.5 : 2.0)と同じ縦長比で切り出しておくと絵柄が歪まない
 const introTextures = [...projects, ...animations]
   .flatMap((item) => (item.thumbnail ? [item.thumbnail] : []))
   .slice(0, 10)
@@ -37,8 +35,6 @@ const introTextures = [...projects, ...animations]
 >
 
   <section class="p-hero js-hero">
-    <!-- 初回表示だけ再生するイントロ。カードが螺旋を描いて奥へ流れたあと
-         フェードアウトし、背後の FV が現れる -->
     <div
       class="p-hero__intro js-hero-intro"
       data-textures={JSON.stringify(introTextures)}
@@ -46,7 +42,6 @@ const introTextures = [...projects, ...animations]
     >
       <div class="p-hero__intro-canvas js-hero-intro-canvas"></div>
     </div>
-    <!-- FV 本体のタイポグラフィ。イントロ抽選とマグネット演出は hero-typography.js -->
     <HeroTypography />
   </section>
   <section
@@ -55,8 +50,6 @@ const introTextures = [...projects, ...animations]
     style={`--p-animation-count:${animations.length}`}
   >
     <div class="p-animation__stage js-animation-stage">
-      <!-- タイトルは sticky なステージの中に置いて、セクション中は画面に固定する。
-           前後のクロスフェードはステージごと section-crossfade.js が opacity を振る -->
       <h2
         class="p-animation__title p-project__title js-animation-title js-text-magnet"
         data-magnet-radius="180"
@@ -129,8 +122,6 @@ const introTextures = [...projects, ...animations]
           </li>
         ))}
       </ul>
-      <!-- 次のプロジェクトへ切り替わるまでの進捗。下スクロールで伸び、
-           振り切ったところで板がめくれる(バーの伸縮は sketch.js が scaleX で書く) -->
       <div class="p-project__progress js-project-progress" aria-hidden="true">
         <span class="p-project__progress-bar js-project-progress-bar"></span>
       </div>
@@ -329,6 +320,7 @@ const introTextures = [...projects, ...animations]
     font-family: var(--ff-display);
     position:absolute;
     top: 120px;
+    white-space: nowrap;
     left: 0;
     @media (--md) {
       top: 30px;
