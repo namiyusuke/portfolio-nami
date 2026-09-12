@@ -2,9 +2,10 @@
 // サイト共通設定
 // ================================
 export const SITE = {
-  name: "",
-  description: "Webサイトの説明文",
-  url: "https://example.com",
+  name: "並河祐輔 | Yusuke Namikawa",
+  description:
+    "Webエンジニア 並河祐輔のポートフォリオ。JavaScript・CSS・WebGLを用いたアニメーションとインタラクション実装が得意です。",
+  url: "https://nami.attcraft.com",
   base: "",
   trackingId: null, // G-XXXXXXX
   clientRouter: false, // ページ遷移は swup(src/js)で制御するため Astro 標準の ClientRouter は不使用
