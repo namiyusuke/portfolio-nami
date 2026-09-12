@@ -129,6 +129,11 @@ const introTextures = [...projects, ...animations]
           </li>
         ))}
       </ul>
+      <!-- 次のプロジェクトへ切り替わるまでの進捗。下スクロールで伸び、
+           振り切ったところで板がめくれる(バーの伸縮は sketch.js が scaleX で書く) -->
+      <div class="p-project__progress js-project-progress" aria-hidden="true">
+        <span class="p-project__progress-bar js-project-progress-bar"></span>
+      </div>
     </div>
   </section>
 </Layout>
@@ -369,8 +374,39 @@ const introTextures = [...projects, ...animations]
   }
 
   .is-webgl.is-folded .p-project__list,
-  .p-project.is-webgl.is-folded .p-project__title {
+  .p-project.is-webgl.is-folded .p-project__title,
+  .p-project.is-webgl.is-folded .p-project__progress {
     opacity: 0;
+  }
+
+  /* 素のリスト表示(WebGL 非対応 / reduced-motion)では板がめくれないので出さない */
+  .p-project__progress {
+    display: none;
+  }
+
+  .is-webgl .p-project__progress {
+    position: absolute;
+    left: 50%;
+    bottom: 10%;
+    z-index: 1;
+    display: block;
+    width: min(240px, 40%);
+    height: 2px;
+    transform: translateX(-50%);
+    background-color: rgb(255 255 255 / 0.25);
+    /* 進捗の表示だけなので板やリンクの当たり判定は奪わない */
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+  }
+
+  .p-project__progress-bar {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background-color: #fff;
+    transform: scaleX(0);
+    transform-origin: left center;
+    will-change: transform;
   }
 
   .is-webgl .p-project__list-item {

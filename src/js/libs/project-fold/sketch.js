@@ -42,7 +42,14 @@ const HOVER_LIFT = 0.15; // ポインタの真下が手前へ出る量
 const HOVER_PULL = 0.5; // まわりの頂点をポインタ側へ引き寄せる量
 const HOVER_EASE = 8; // ホバーの追従の速さ(1秒あたり。大きいほど機敏)
 
-const SWAP_HOLD = 2.6; // 次のプロジェクトへ切り替わるまでの待ち時間(秒)
+// 何も触らずにゲージが振り切れるまでの時間(秒)。従来の「待ち時間」と同じ間隔
+const SWAP_HOLD = 2.6;
+// 1枚めくるのに要る下スクロール量(画面高に対する比)。
+// この量を 0 → 1 の進捗に直して溜め、1 に達したところで次の板へ送る
+const SWAP_SCROLL_RATIO = 0.8;
+// 進捗が 0 → 1 まで溜まるのに最低限かかる時間(秒)。
+// Lenis は1回のホイールでも数百 px 動かすので、上限を付けないとひと弾きで振り切れてしまう
+const SWAP_MIN_SECONDS = 0.8;
 const SWAP_FADE = 1.2; // 背景テキストと DOM タイトルのクロスフェードにかける時間(秒)
 const EXIT_DURATION = 1.2; // 今の板がめくれを巻き上げながら真上へ抜けていく時間(秒)
 const ENTER_DURATION = 1.8; // 次の板が真下から昇ってくる時間(秒)。デモの1サイクルは3秒
@@ -107,7 +114,8 @@ const makeTextTexture = (
 };
 
 // Projects セクションの WebGPU ステージ。
-// プロジェクトは一定間隔で入れ替わりながら巡回する。今の板が hero-intro と同じ
+// プロジェクトは一定間隔で入れ替わりながら巡回し、セクションが見えている間に
+// 下へスクロールすると待ち時間を待たずに次へ送られる。今の板が hero-intro と同じ
 // めくれ(スピン + 斜め軸のフリップ + 垂れ下がり)を巻き上げながら真上へ抜けていき、
 // 次の板が真下から同じめくれをほどきながら中央へ昇ってくる。
 // 板(またはタイトルのリンク)をクリックすると折りたたみが始まり、
@@ -139,9 +147,19 @@ export default class ProjectFold {
     this.time = 0;
     // 入れ替えの timeline が走っている間 true(GUI の「今すぐ入れ替え」の二重起動よけ)
     this.swapping = false;
+    // 次の板へ送るまでのゲージ(0 → 1)。時間と下スクロールの両方で溜まり、
+    // 1 に達したところで次の板へ送って 0 から引き直す。
+    // 上スクロールでは戻るので、スクロールで早送りできるのは下へ動かしたときだけ
+    this.swapProgress = 0;
+    // 前フレームからの下向きスクロール入力(px)。
+    // このセクションはページ最下端に来るため、ステージが画面に収まった時点で
+    // ドキュメントはもう動かせない。scrollY の変化ではなく入力そのものを見る
+    this.scrollInput = 0;
+    this.touchY = null;
     // GUI から触る時間まわりの調整値。playSwap が毎回読むので次のサイクルから効く
     this.params = {
       hold: SWAP_HOLD,
+      scrollPerSwap: SWAP_SCROLL_RATIO,
       fade: SWAP_FADE,
       exitDuration: EXIT_DURATION,
       enterDuration: ENTER_DURATION,
@@ -205,6 +223,13 @@ export default class ProjectFold {
     });
     this.bgTextures = this.texts.map((text) => makeTextTexture(text));
 
+    // 送り先が無い(板が1枚だけ)ときは進捗を出しても意味がないのでバーごと隠す
+    this.progress = this.section.querySelector(".js-project-progress");
+    this.progressBar = this.section.querySelector(".js-project-progress-bar");
+    if (this.progress && this.textures.length < 2) {
+      this.progress.style.display = "none";
+    }
+
     this.addBackground();
     this.addObjects();
     this.applyTextures();
@@ -214,7 +239,7 @@ export default class ProjectFold {
     this.onResize = this.resize.bind(this);
     window.addEventListener("resize", this.onResize);
     this.setupPointer();
-    this.scheduleSwap();
+    this.setupScrollInput();
     this.setupGui();
 
     // 詳細ページへの遷移は、この板の折りたたみを退場演出として使う
@@ -304,10 +329,7 @@ export default class ProjectFold {
     this.exitMaterial.colorNode = Fn(() => this.exitTex.sample(faceUv()))();
     this.exitMaterial.positionNode = Fn(() => {
       const pos = positionLocal.toVar();
-      // 入場と同じめくれ。leave が 0 → 1 でめくれを巻き上げながら出ていく
       flipDeform(pos, leave);
-      // 本体の板は折りたたみの回転軸の都合で常に FOLD_DEPTH ぶん奥に描かれている
-      // (positionNode 末尾の pos.sub(center))ので、同じだけ奥へ置いて大きさを揃える
       return pos.sub(vec3(0, 0, FOLD_DEPTH));
     })();
     this.exitMesh = new THREE.Mesh(this.geometry, this.exitMaterial);
@@ -379,21 +401,94 @@ export default class ProjectFold {
     });
   }
 
-  // 「待つ → 入れ替える」を繰り返してプロジェクトを巡回する。
-  // this.cycle が常に今動いている方(待ちの delayedCall か入れ替えの timeline)を指すので、
-  // 画面外での pause / resume や destroy の kill はどの瞬間でも効く
-  scheduleSwap() {
-    if (this.textures.length < 2) {
+
+  setupScrollInput() {
+    this.onWheel = (event) => {
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
+      this.scrollInput += event.deltaY * unit;
+    };
+
+    this.onTouchStart = (event) => {
+      this.touchY = event.touches[0]?.clientY ?? null;
+    };
+
+    // 指を上へ動かす = 下スクロール。前回の位置との差をそのまま px として扱う
+    this.onTouchMove = (event) => {
+      const y = event.touches[0]?.clientY;
+      if (y == null) {
+        return;
+      }
+
+      if (this.touchY != null) {
+        this.scrollInput += this.touchY - y;
+      }
+      this.touchY = y;
+    };
+
+    this.onTouchEnd = () => {
+      this.touchY = null;
+    };
+
+    // スクロールを妨げないよう passive で聞くだけにする
+    window.addEventListener("wheel", this.onWheel, { passive: true });
+    window.addEventListener("touchstart", this.onTouchStart, { passive: true });
+    window.addEventListener("touchmove", this.onTouchMove, { passive: true });
+    window.addEventListener("touchend", this.onTouchEnd, { passive: true });
+    window.addEventListener("touchcancel", this.onTouchEnd, { passive: true });
+  }
+
+  // 次の板へ送るゲージを溜める。時間とスクロールの両方が同じゲージに入り、
+  // 1 に達したところで次へ送る。放っておいても hold 秒で振り切れる(＝自動めくり)ので、
+  // 下スクロールはその早送り。上スクロールではゲージが戻る(下限 0)
+  updateSwapGauge(deltaTime) {
+    const delta = this.scrollInput;
+    this.scrollInput = 0;
+
+    if (this.folded || this.textures.length < 2) {
       return;
     }
 
-    this.cycle = gsap.delayedCall(this.params.hold, () => this.playSwap());
+    // めくれている最中は次を重ねられない。ゲージは振り切ったまま待たせ、
+    // 着地(playSwap の onComplete)で 0 から引き直す
+    if (this.swapping) {
+      this.swapProgress = 1;
+      return;
+    }
+
+    const seconds = deltaTime / 1000;
+    // 時間で溜まるぶん。何も触らなければ hold 秒ちょうどで 1 に届く
+    const byTime = this.params.hold > 0 ? seconds / this.params.hold : 1;
+
+    // スクロールで溜まるぶん。1枚ぶん = 画面高 × scrollPerSwap。
+    // Lenis の慣性でひと弾き数百 px 動くので、1フレームで進める幅に上限を掛け、
+    // 勢いよく回しても振り切るまでに必ず SWAP_MIN_SECONDS ぶんの時間がかかるようにする
+    const span = window.innerHeight * this.params.scrollPerSwap;
+    const limit = seconds / SWAP_MIN_SECONDS;
+    const byScroll = span > 0 ? Math.min(Math.max(delta / span, -limit), limit) : 0;
+
+    this.swapProgress = Math.min(1, Math.max(0, this.swapProgress + byTime + byScroll));
+    if (this.swapProgress < 1) {
+      return;
+    }
+
+    this.playSwap();
+  }
+
+  // ゲージの溜まり具合をそのままバーに出す
+  updateProgressBar() {
+    if (!this.progressBar) {
+      return;
+    }
+
+    this.progressBar.style.transform = `scaleX(${this.swapProgress})`;
   }
 
   // 入れ替え本体。今の板が退場用の板としてめくれを巻き上げながら真上へ抜けていき、
   // 次の絵に差し替えた本体の板が真下から同じめくれをほどきながら中央へ昇ってくる
   playSwap() {
     this.swapping = true;
+    // ゲージはめくれ終わるまで振り切ったまま。0 に戻すのは着地してから(onComplete)
+    this.swapProgress = 1;
     const { fade, exitDuration, enterDuration, enterDelay } = this.params;
     const next = (this.current + 1) % this.textures.length;
     const view = this.getViewSize(this.camera.position.z);
@@ -427,7 +522,8 @@ export default class ProjectFold {
         this.uniforms.texMix.value = 0;
         this.applyTextures();
         this.syncItems();
-        this.scheduleSwap();
+        // 次の1枚ぶんをここから溜め直す
+        this.swapProgress = 0;
       },
     });
 
@@ -484,7 +580,10 @@ export default class ProjectFold {
     this.gui = new GUI({ title: "project swap" });
     this.gui.hide();
     const timing = this.gui.addFolder("timing");
-    timing.add(this.params, "hold", 0, 8, 0.1).name("待ち時間");
+    // どちらもゲージの溜まる速さ。次のフレームから効く(溜まっているぶんは引き継がれる)
+    timing.add(this.params, "hold", 0.5, 12, 0.1).name("時間で溜まる秒数");
+    timing.add(this.params, "scrollPerSwap", 0.1, 3, 0.1).name("めくるスクロール量");
+    timing.add(this, "swapProgress", 0, 1).name("ゲージ").listen().disable();
     timing.add(this.params, "fade", 0.1, 3, 0.05).name("クロスフェード");
     timing.add(this.params, "exitDuration", 0.2, 4, 0.05).name("退場");
     timing.add(this.params, "enterDuration", 0.2, 4, 0.05).name("入場");
@@ -862,12 +961,18 @@ export default class ProjectFold {
         if (!visible) {
           this.cycle?.pause();
         } else if (!this.folded) {
+          // 画面外の間に溜まったぶんでいきなりめくれないよう、進捗と入力を捨てる
+          this.swapProgress = 0;
+          this.scrollInput = 0;
           this.cycle?.resume();
         }
       }
       if (!visible) {
         return;
       }
+
+      this.updateSwapGauge(deltaTime);
+      this.updateProgressBar();
     }
 
     this.updateHover(deltaTime);
@@ -893,6 +998,9 @@ export default class ProjectFold {
     this.unlockStage();
 
     this.gui?.destroy();
+    // 素のリスト表示へ落ちたときに、隠したままのバーや途中の伸びを残さない
+    this.progress?.style.removeProperty("display");
+    this.progressBar?.style.removeProperty("transform");
     clearTimeout(this.landTimer);
     this.cycle?.kill();
     for (const tween of this.exitTweens) {
@@ -909,6 +1017,13 @@ export default class ProjectFold {
     }
     if (this.onResize) {
       window.removeEventListener("resize", this.onResize);
+    }
+    if (this.onWheel) {
+      window.removeEventListener("wheel", this.onWheel);
+      window.removeEventListener("touchstart", this.onTouchStart);
+      window.removeEventListener("touchmove", this.onTouchMove);
+      window.removeEventListener("touchend", this.onTouchEnd);
+      window.removeEventListener("touchcancel", this.onTouchEnd);
     }
 
     const el = this.renderer?.domElement;
