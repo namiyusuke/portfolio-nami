@@ -13,6 +13,7 @@ import Observer from "./libs/observer.js";
 import { initProjectFold } from "./libs/project-fold.js";
 import { initProjectGallery } from "./libs/project-gallery.js";
 import { initProjectHero } from "./libs/project-hero.js";
+import { initScrollMemory } from "./libs/scroll-memory.js";
 import { initSectionCrossfade } from "./libs/section-crossfade.js";
 import { initNoteSwiper } from "./libs/swiper.js";
 import { initSwup, registerPageInit, registerPageTransition } from "./libs/swup.js";
@@ -71,3 +72,7 @@ initSwup();
 // ページ内アンカー(/#animation 等)を Lenis のスムーススクロールで処理する。
 // Swup のスクロール系フックを差し替えるので initSwup() のあとに呼ぶ
 initAnchorScroll();
+
+// 戻る / 進むのスクロール位置の復元。page:view を onPageInit() より後に
+// 走らせる必要があるので、こちらも initSwup() のあとに呼ぶ
+initScrollMemory();

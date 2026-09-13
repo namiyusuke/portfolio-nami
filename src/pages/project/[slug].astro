@@ -370,8 +370,6 @@ const metaDescription = outlineText
 }
 .project-member__item{
   display: flex;
-  /* SP は 役割 / 名前 を縦積みにする(横並びだと名前が潰れる) */
-  flex-direction: column;
   gap: 0.25rem;
 }
 .project-member__item + .project-member__item{
@@ -382,6 +380,10 @@ const metaDescription = outlineText
   padding-top: 90px;
   border-top: 1px solid #fff;
 }
+  .project-member__role{
+    width: 120px;
+    flex-shrink: 0;
+  }
 @media (--md) {
   .project__detail-wrapper{
   margin-top: 160px;

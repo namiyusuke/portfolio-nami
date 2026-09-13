@@ -61,12 +61,13 @@ export const initHeroIntro = async () => {
 
   hasPlayed = true;
 
-  // リロードでブラウザがスクロール位置を復元したままだと、イントロが
-  // ページ中腹の景色の上で始まってしまう。再生するときは必ず先頭から。
+  // イントロがページ中腹の景色の上で始まらないよう、再生するときは必ず先頭から。
   // (/#animation のようなアンカー付きで来たときはアンカーを尊重する)
+  //
+  // 以前はここで history.scrollRestoration = "manual" も立てていたが、
+  // 「イントロを再生したときだけ」という条件付きの副作用だったため、戻る操作の
+  // 挙動が環境によって割れていた。復元の制御は scroll-memory.js に一本化してある
   if (!window.location.hash) {
-    // ページの高さが確定したあとにブラウザが復元し直すのも止める
-    history.scrollRestoration = "manual";
     window.scrollTo(0, 0);
     resetScroll();
   }

@@ -14,9 +14,11 @@ import { getSwup } from "./swup.js";
 // 搬送の世代。連打で新しい搬送が始まったら古い onComplete は無視する
 let token = 0;
 
-const scrollToElement = (target) => {
+// target は要素か数値(ページ位置)。0 は falsy なので存在判定は == null で行う。
+// immediate を付けると搬送を見せずに一瞬で着地する(履歴復元のように
+// 「移動の過程を見せたくない」場合に使う)
+export const scrollToTarget = (target, { immediate = false } = {}) => {
   const lenis = getLenis();
-  // target は要素か 0(ページ先頭)。0 は falsy なので存在判定は == null で行う
   if (!lenis || target == null) {
     return false;
   }
@@ -31,6 +33,7 @@ const scrollToElement = (target) => {
   lenis.scrollTo(target, {
     lock: true,
     force: true,
+    immediate,
     onComplete: () => {
       if (current === token) {
         resumeHeroSnap();
@@ -44,7 +47,7 @@ const scrollToElement = (target) => {
 // location.hash に対応する要素へスムーススクロールする。要素が無ければ何もしない
 export const scrollToHash = (hash) => {
   const target = hash ? document.querySelector(hash) : null;
-  return target ? scrollToElement(target) : false;
+  return target ? scrollToTarget(target) : false;
 };
 
 export const initAnchorScroll = () => {
@@ -67,7 +70,7 @@ export const initAnchorScroll = () => {
       return true;
     }
 
-    return scrollToElement(target);
+    return scrollToTarget(target);
   });
 
   // 現在ページへのリンク(ヘッダーの Top)。ネイティブの window.scrollTo を止める
@@ -77,6 +80,6 @@ export const initAnchorScroll = () => {
       return false;
     }
 
-    return scrollToElement(0);
+    return scrollToTarget(0);
   });
 };
