@@ -47,6 +47,9 @@ const SWAP_HOLD = 2.6;
 // 1枚めくるのに要る下スクロール量(画面高に対する比)。
 // この量を 0 → 1 の進捗に直して溜め、1 に達したところで次の板へ送る
 const SWAP_SCROLL_RATIO = 0.8;
+// タッチ端末ぶんの比。ひとスワイプで稼げる距離はホイールより短く、
+// セクションが画面にいる間にゲージの伸びを見せ切れないので少ない量でめくる
+const SWAP_SCROLL_RATIO_TOUCH = 0.45;
 // 進捗が 0 → 1 まで溜まるのに最低限かかる時間(秒)。
 // Lenis は1回のホイールでも数百 px 動かすので、上限を付けないとひと弾きで振り切れてしまう
 const SWAP_MIN_SECONDS = 0.8;
@@ -145,21 +148,16 @@ export default class ProjectFold {
     this.exitTweens = [];
     this.exitResolvers = [];
     this.time = 0;
-    // 入れ替えの timeline が走っている間 true(GUI の「今すぐ入れ替え」の二重起動よけ)
     this.swapping = false;
-    // 次の板へ送るまでのゲージ(0 → 1)。時間と下スクロールの両方で溜まり、
-    // 1 に達したところで次の板へ送って 0 から引き直す。
-    // 上スクロールでは戻るので、スクロールで早送りできるのは下へ動かしたときだけ
     this.swapProgress = 0;
-    // 前フレームからの下向きスクロール入力(px)。
-    // このセクションはページ最下端に来るため、ステージが画面に収まった時点で
-    // ドキュメントはもう動かせない。scrollY の変化ではなく入力そのものを見る
     this.scrollInput = 0;
     this.touchY = null;
-    // GUI から触る時間まわりの調整値。playSwap が毎回読むので次のサイクルから効く
+    // 慣性スクロールを拾うために覚えておく前フレームのスクロール位置(タッチ端末のみ)
+    this.lastScrollY = null;
+    this.coarsePointer = window.matchMedia("(pointer: coarse)").matches;
     this.params = {
       hold: SWAP_HOLD,
-      scrollPerSwap: SWAP_SCROLL_RATIO,
+      scrollPerSwap: this.coarsePointer ? SWAP_SCROLL_RATIO_TOUCH : SWAP_SCROLL_RATIO,
       fade: SWAP_FADE,
       exitDuration: EXIT_DURATION,
       enterDuration: ENTER_DURATION,
@@ -437,11 +435,30 @@ export default class ProjectFold {
     window.addEventListener("touchcancel", this.onTouchEnd, { passive: true });
   }
 
+  // 指を離したあとの慣性スクロールぶんを入力に足す。touchmove は接地中しか飛んでこないので、
+  // それだけだとフリックの移動量の大半(＝慣性で流れている区間)がゲージに乗らない。
+  // 接地中は touchmove が同じ動きを入れているため、ここでは位置を記録するだけにして二重に数えない。
+  // ホイールは Lenis が慣性を持っている(＝スクロール位置が後から動く)ので、タッチ端末だけの処理
+  readMomentum() {
+    if (!this.coarsePointer) {
+      return 0;
+    }
+
+    const y = window.scrollY;
+    const last = this.lastScrollY;
+    this.lastScrollY = y;
+    if (last == null || this.touchY != null) {
+      return 0;
+    }
+
+    return y - last;
+  }
+
   // 次の板へ送るゲージを溜める。時間とスクロールの両方が同じゲージに入り、
   // 1 に達したところで次へ送る。放っておいても hold 秒で振り切れる(＝自動めくり)ので、
   // 下スクロールはその早送り。上スクロールではゲージが戻る(下限 0)
   updateSwapGauge(deltaTime) {
-    const delta = this.scrollInput;
+    const delta = this.scrollInput + this.readMomentum();
     this.scrollInput = 0;
 
     if (this.folded || this.textures.length < 2) {
@@ -961,6 +978,8 @@ export default class ProjectFold {
           // 画面外の間に溜まったぶんでいきなりめくれないよう、進捗と入力を捨てる
           this.swapProgress = 0;
           this.scrollInput = 0;
+          // 画面外にいた間のスクロール量を慣性として数えないよう、基準を取り直す
+          this.lastScrollY = null;
           this.cycle?.resume();
         }
       }

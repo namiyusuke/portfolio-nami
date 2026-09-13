@@ -2,6 +2,7 @@
 // three は重いので、イントロがあるページでだけ動的に読み込む。
 
 import { resetScroll } from "./lenis.js";
+import { isHistoryNavigation } from "./scroll-memory.js";
 import { isWebGL2Available } from "./webgl-support.js";
 
 let instance = null;
@@ -47,9 +48,12 @@ export const initHeroIntro = async () => {
     textures = [];
   }
 
-  // 非対応・モーション低減・再訪はイントロを流さず、すぐ FV を見せる
+  // 非対応・モーション低減・再訪はイントロを流さず、すぐ FV を見せる。
+  // 戻る / 進むでページごと作り直された読み込みも「再訪」に含める。
+  // scroll-memory.js が元の位置へ復元するので、そこへイントロを被せない
   if (
     hasPlayed ||
+    isHistoryNavigation() ||
     !container ||
     textures.length === 0 ||
     window.matchMedia("(prefers-reduced-motion: reduce)").matches ||

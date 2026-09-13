@@ -376,19 +376,30 @@ const introTextures = [...projects, ...animations]
     display: none;
   }
 
+  /* スマホは細い線だと伸びているのが見えないので、太く・長く出す */
   .is-webgl .p-project__progress {
     position: absolute;
     left: 50%;
     bottom: 10%;
     z-index: 1;
     display: block;
-    width: min(240px, 40%);
-    height: 2px;
+    width: min(240px, 64%);
+    height: 4px;
+    border-radius: 999px;
+    /* バーの角も丸めるため、親側で切り抜く */
+    overflow: hidden;
     transform: translateX(-50%);
     background-color: rgb(255 255 255 / 0.25);
     /* 進捗の表示だけなので板やリンクの当たり判定は奪わない */
     pointer-events: none;
     transition: opacity 0.6s ease;
+  }
+
+  @media (--md) {
+    .is-webgl .p-project__progress {
+      width: min(240px, 40%);
+      height: 2px;
+    }
   }
 
   .p-project__progress-bar {

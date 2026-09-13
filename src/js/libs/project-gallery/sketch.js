@@ -42,11 +42,6 @@ const CAMERA_Z = 1000;
 // 画面外判定の余白(px)。捲れで板の外へはみ出すぶんを見込む
 const VIEW_MARGIN = 50;
 
-// 詳細ページの画像ギャラリー。DOM の <img> と同じ矩形に WebGPU の板を重ね、
-// 下端だけページの角のように捲れた状態で見せる。捲れの戻りはスクロール量に
-// 直結していて、画像がビューポートを昇っていくのに合わせて巻きがほどける。
-// DOM の画像はテクスチャが用意できた項目から順に visibility: hidden へ差し替える
-// (WebGL が使えない環境ではそのまま素の画像が見える)。
 export default class ProjectGallery {
   constructor({ images, release }) {
     this.images = images;
@@ -212,10 +207,6 @@ export default class ProjectGallery {
       return false;
     }
 
-    // スクロールに合わせて捲れをほどく。画像の上端が start のラインから
-    // end のラインへ昇る間の進行度を目標値にして(戻せばまた捲れる)、
-    // curl はそこへ smooth の速さで追いつかせる = スクロールより一拍遅れてゆったり動く。
-    // deltaTime に依らず同じ速さで収束するよう、指数で減衰させる
     const { start, end, smooth } = this.params;
     const progress = (start - rect.top / this.height) / (start - end);
     const target = 1 - this.ease(THREE.MathUtils.clamp(progress, 0, 1));
