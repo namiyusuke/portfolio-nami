@@ -444,7 +444,11 @@ export default class ProjectFold {
       return 0;
     }
 
-    const y = window.scrollY;
+    // ページ端のバウンド(ラバーバンド)は行きも戻りも入力にしない。
+    // iOS は端を越えたぶんまで scrollY に乗せてくるので、戻りが負の入力になり、
+    // 下まで弾いた瞬間にバーが一瞬縮んで見えてしまう
+    const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    const y = Math.min(Math.max(window.scrollY, 0), max);
     const last = this.lastScrollY;
     this.lastScrollY = y;
     if (last == null || this.touchY != null) {
