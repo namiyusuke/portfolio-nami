@@ -366,7 +366,6 @@ const metaDescription = outlineText
 .project__outline,
 .project-member__list-wrapper{
   width: 100%;
-  margin-left: auto;
 }
 .project-member__item{
   display: flex;
@@ -415,9 +414,17 @@ const metaDescription = outlineText
   margin-inline: auto;
 }
 @media (--md) {
-.project__wrapper{
-  width: 95vw;
-  margin-inline: auto;
+  .project__wrapper{
+    width: 95vw;
+    margin-inline: auto;
+  }
 }
+.project__body--back .project__back{
+  margin-top: 100px;
+}
+@media (--md) {
+  .project__body--back .project__back{
+    margin-top: 150px;
+  }
 }
 </style>

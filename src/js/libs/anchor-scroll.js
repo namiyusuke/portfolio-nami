@@ -23,6 +23,16 @@ export const scrollToTarget = (target, { immediate = false } = {}) => {
     return false;
   }
 
+  // 運ぶ前に必ずページの高さを測り直す。
+  // Lenis は目的地を limit(= 最大スクロール量)でクランプするが、その limit は
+  // ResizeObserver(250ms デバウンス)でしか更新されない。ページが差し替わった
+  // 直後(遷移や履歴復元)はまだ前ページの短い値のままなので、放っておくと
+  // 下のほうにある目的地(/#projects 等)がその値まで切り詰められ、手前の
+  // Animation の途中で止まってしまう。
+  // 差し替えから着地までは入場演出のぶん(0.4s)しか猶予が無く、three の読み込みで
+  // メインスレッドが詰まると ResizeObserver の発火自体が遅れて間に合わない
+  lenis.resize();
+
   const current = ++token;
 
   // MV ↔ Animation の重なり区間を通り過ぎる搬送(例: MV から Projects へ)は、

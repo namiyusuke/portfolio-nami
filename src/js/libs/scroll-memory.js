@@ -1,5 +1,4 @@
 import { scrollToTarget } from "./anchor-scroll.js";
-import { getLenis } from "./lenis.js";
 import { getSwup } from "./swup.js";
 
 // 戻る / 進むのスクロール位置を自前で復元する。
@@ -80,11 +79,8 @@ const landingTarget = (fromUrl, toUrl) => {
 };
 
 const restore = (fromUrl, toUrl) => {
-  // 高さが変わった直後。Lenis の limit は ResizeObserver(250ms デバウンス)待ちで
-  // まだ差し替え前の短い値のままなので、先に測り直す。
-  // これを忘れると今度は Lenis 側で同じクランプを食らう
-  getLenis()?.resize();
-
+  // 高さが変わった直後なので Lenis の limit は前ページの短い値のままだが、
+  // その測り直しは scrollToTarget() が運ぶ前に済ませてくれる
   scrollToTarget(landingTarget(fromUrl, toUrl), { immediate: true });
 };
 
