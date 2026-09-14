@@ -13,7 +13,7 @@ import Observer from "./libs/observer.js";
 import { initProjectFold } from "./libs/project-fold.js";
 import { initProjectGallery } from "./libs/project-gallery.js";
 import { initProjectHero } from "./libs/project-hero.js";
-import { initScrollMemory } from "./libs/scroll-memory.js";
+import { initScrollMemory, isHistoryNavigation } from "./libs/scroll-memory.js";
 import { initSectionCrossfade } from "./libs/section-crossfade.js";
 import { initNoteSwiper } from "./libs/swiper.js";
 import { initSwup, registerPageInit, registerPageTransition } from "./libs/swup.js";
@@ -76,3 +76,21 @@ initAnchorScroll();
 // 戻る / 進むのスクロール位置の復元。page:view を onPageInit() より後に
 // 走らせる必要があるので、こちらも initSwup() のあとに呼ぶ
 initScrollMemory();
+
+// 直打ちやリロードで /#projects のようにハッシュ付きで開かれたときの着地。
+//
+// 初回ロードの着地はブラウザ任せだが、それが走るのは JS が .is-webgl を付ける前、
+// つまり素のリスト表示の高さのとき。直後に Animation が (件数 + 1) × 80lvh へ伸びて
+// Projects は数画面ぶん下へ動くので、止まった位置はそのまま Animation の途中になる。
+// ブラウザは読み込み中フラグメントへの再スクロールを試み続けるため、.is-webgl が
+// 間に合った回だけ正しく着地する = ズレたりズレなかったりする。
+//
+// ここは initSwup() → onPageInit() が .is-webgl を付け終えたあと。高さは lvh だけで
+// 決まるのでこの時点で確定していて、あとから動くことはない。
+// (前ページの短い値のままの Lenis の limit は scrollToTarget() が測り直す)
+//
+// 戻る / 進むでの読み込みは scroll-memory.js が元の位置へ戻すので任せる
+if (!isHistoryNavigation()) {
+  // ブラウザが既にそこへ跳んでいる = 移動の過程は見せない
+  scrollToHash(window.location.hash, { immediate: true });
+}

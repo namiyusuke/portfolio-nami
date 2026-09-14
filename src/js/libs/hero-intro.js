@@ -8,8 +8,10 @@ import { isWebGL2Available } from "./webgl-support.js";
 let instance = null;
 // 遷移が読み込みを追い越したときに、古い読み込み結果を捨てるための世代番号
 let generation = 0;
-// イントロは初回表示の1回だけ。Swup 遷移でトップへ戻ってきたときは再生しない
-let hasPlayed = false;
+// イントロを流せるのは、このドキュメントで最初に描かれたページだけ。
+// 詳細ページを直接開いた / リロードしたあとで Swup でトップへ来た場合も
+// 「サイトの入り口はトップではなかった」ので再生しない
+let isFirstView = true;
 
 export const destroyHeroIntro = () => {
   generation += 1;
@@ -22,6 +24,11 @@ export const destroyHeroIntro = () => {
 export const initHeroIntro = async () => {
   // Swup 遷移では前ページのインスタンスが残っているので必ず先に破棄する
   destroyHeroIntro();
+
+  // イントロの無いページ(詳細など)での初期化でも「最初の1ページ」は消費する。
+  // ここで降ろさないと、詳細ページのリロード後にトップへ遷移したときイントロが動く
+  const firstView = isFirstView;
+  isFirstView = false;
 
   const overlay = document.querySelector(".js-hero-intro");
   if (!overlay) {
@@ -52,7 +59,7 @@ export const initHeroIntro = async () => {
   // 戻る / 進むでページごと作り直された読み込みも「再訪」に含める。
   // scroll-memory.js が元の位置へ復元するので、そこへイントロを被せない
   if (
-    hasPlayed ||
+    !firstView ||
     isHistoryNavigation() ||
     !container ||
     textures.length === 0 ||
@@ -62,8 +69,6 @@ export const initHeroIntro = async () => {
     markDone();
     return;
   }
-
-  hasPlayed = true;
 
   // イントロがページ中腹の景色の上で始まらないよう、再生するときは必ず先頭から。
   // (/#animation のようなアンカー付きで来たときはアンカーを尊重する)
