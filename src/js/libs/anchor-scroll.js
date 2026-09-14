@@ -54,13 +54,13 @@ export const scrollToTarget = (target, { immediate = false } = {}) => {
   return true;
 };
 
-// location.hash に対応する要素へスクロールする。要素が無ければ何もしない。
+// location.hash が指す要素。無ければ null。
 // ハッシュはユーザーが打った文字列がそのまま入る(= セレクタとして不正なこともある)ので
 // querySelector ではなく id で引く
-export const scrollToHash = (hash, options) => {
+export const hashTarget = (hash) => {
   const id = hash?.slice(1);
   if (!id) {
-    return false;
+    return null;
   }
 
   let decoded = id;
@@ -70,7 +70,12 @@ export const scrollToHash = (hash, options) => {
     // 壊れたパーセントエンコードはそのままの文字列で引く
   }
 
-  const target = document.getElementById(decoded);
+  return document.getElementById(decoded);
+};
+
+// location.hash に対応する要素へスクロールする。要素が無ければ何もしない
+export const scrollToHash = (hash, options) => {
+  const target = hashTarget(hash);
   return target ? scrollToTarget(target, options) : false;
 };
 

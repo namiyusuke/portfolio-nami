@@ -1,6 +1,7 @@
 // FV の手前で流すイントロ(カードが螺旋を描いて奥へ流れる)の mount / dispose を受け持つ。
 // three は重いので、イントロがあるページでだけ動的に読み込む。
 
+import { hashTarget } from "./anchor-scroll.js";
 import { resetScroll } from "./lenis.js";
 import { isHistoryNavigation } from "./scroll-memory.js";
 import { isWebGL2Available } from "./webgl-support.js";
@@ -57,10 +58,15 @@ export const initHeroIntro = async () => {
 
   // 非対応・モーション低減・再訪はイントロを流さず、すぐ FV を見せる。
   // 戻る / 進むでページごと作り直された読み込みも「再訪」に含める。
-  // scroll-memory.js が元の位置へ復元するので、そこへイントロを被せない
+  // scroll-memory.js が元の位置へ復元するので、そこへイントロを被せない。
+  //
+  // /#projects のようにアンカー付きで開かれたときも流さない。着地するのは FV では
+  // ないのに、オーバーレイは fixed なので着地点の上に被さり、その景色の上で
+  // カードが流れて緑のグラデーションが半透明にかかったままになる
   if (
     !firstView ||
     isHistoryNavigation() ||
+    hashTarget(window.location.hash) ||
     !container ||
     textures.length === 0 ||
     window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
@@ -71,15 +77,14 @@ export const initHeroIntro = async () => {
   }
 
   // イントロがページ中腹の景色の上で始まらないよう、再生するときは必ず先頭から。
-  // (/#animation のようなアンカー付きで来たときはアンカーを尊重する)
+  // 着地先のあるハッシュは上で弾いてあるので、ここへ来た時点で行き先は FV しかない
+  // (#does-not-exist のような空振りのハッシュが残っていることはある)
   //
   // 以前はここで history.scrollRestoration = "manual" も立てていたが、
   // 「イントロを再生したときだけ」という条件付きの副作用だったため、戻る操作の
   // 挙動が環境によって割れていた。復元の制御は scroll-memory.js に一本化してある
-  if (!window.location.hash) {
-    window.scrollTo(0, 0);
-    resetScroll();
-  }
+  window.scrollTo(0, 0);
+  resetScroll();
 
   // キャンバスの実寸を先に確定させてから読み込む(display:none のままだと 0 になる)
   overlay.classList.add("is-webgl");
