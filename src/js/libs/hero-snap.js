@@ -99,17 +99,30 @@ export const initHeroSnap = () => {
         state = snapDest;
       } else if (!lenis.isScrolling) {
         // 区間の途中で止まってしまった場合の保険。
-        // 近いほうへスナップし直す状態を選んで復帰する("mv" は下へ、"slider" は上へ)
-        state = top <= window.innerHeight / 2 ? "mv" : "slider";
+        // 近いほうへスナップし直す状態を選んで復帰する("mv" は下へ、"slider" は上へ)。
+        // 区間の外まで運ばれていることもある(下の「飛び越え」と同じ経路)ので、
+        // 内と外を区別できる resolveState() に判定を一本化する
+        state = resolveState();
       }
       return;
     }
 
     if (state === "mv") {
-      // MV で下へスクロールし始めたら、フェード区間の終端(Animation 先頭)まで運ぶ
-      if (top < window.innerHeight - EPS) {
+      if (top <= EPS) {
+        // 重なり区間をひとフレームで飛び越えている。
+        // Lenis の lock が止められるのは自分が拾っているホイールとタッチだけで、
+        // キーボード(End / PageDown)やスクロールバーのドラッグは素通りするため、
+        // ticker が区間の通過を目撃できないまま "mv" が残ることがある。
+        // ここで下限を見ずに運ぶと、ページ最下部からでも Animation まで
+        // 連れ戻してしまうので、連れ戻さず今の位置に合う状態を採る
+        state = "slider";
+      } else if (top < window.innerHeight - EPS) {
+        // MV で下へスクロールし始めたら、フェード区間の終端(Animation 先頭)まで運ぶ
         snapTo(animation, "slider");
       }
+    } else if (top >= window.innerHeight - EPS) {
+      // 同じく上へ飛び越えた場合。既に MV にいるので運ぶ必要はない
+      state = "mv";
     } else if (top > EPS) {
       // スライダー先頭から上へ抜けたら MV まで戻す
       snapTo(0, "mv");

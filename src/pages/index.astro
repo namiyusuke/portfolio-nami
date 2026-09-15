@@ -21,9 +21,9 @@ const animations = await getAnimations();
 const projects = await getProjects();
 console.log(projects);
 
-const introTextures = [...projects, ...animations]
+const introTextures = [...projects]
   .flatMap((item) => (item.thumbnail ? [item.thumbnail] : []))
-  .slice(0, 10)
+  .slice(0, 8)
   .map((thumbnail) =>
     urlFor(thumbnail).width(768).height(1024).fit("crop").auto("format").url()
   );
