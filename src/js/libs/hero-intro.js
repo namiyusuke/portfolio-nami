@@ -2,7 +2,7 @@
 // three は重いので、イントロがあるページでだけ動的に読み込む。
 
 import { hashTarget } from "./anchor-scroll.js";
-import { resetScroll } from "./lenis.js";
+import { getLenis, resetScroll } from "./lenis.js";
 import { isHistoryNavigation } from "./scroll-memory.js";
 import { isWebGL2Available } from "./webgl-support.js";
 
@@ -13,9 +13,32 @@ let generation = 0;
 // 詳細ページを直接開いた / リロードしたあとで Swup でトップへ来た場合も
 // 「サイトの入り口はトップではなかった」ので再生しない
 let isFirstView = true;
+// イントロ中のスクロールを止めているのが自分かどうか。
+// ドロワーや About の紙のオーバーレイも同じ Lenis を止めるので、
+// 自分が取ったロックでなければ解かない
+let hasScrollLock = false;
+
+// three の読み込み待ちも含めてスクロールを塞ぐ。
+// global.css の .lenis-stopped { overflow: clip } でホイールだけでなく
+// キーボードやスクロールバーのドラッグも一緒に止まる
+const lockScroll = () => {
+  getLenis()?.stop();
+  hasScrollLock = true;
+};
+
+const unlockScroll = () => {
+  if (!hasScrollLock) {
+    return;
+  }
+
+  hasScrollLock = false;
+  getLenis()?.start();
+};
 
 export const destroyHeroIntro = () => {
   generation += 1;
+  // 遷移で読み込み中・再生中のイントロを捨てるときに、ロックを道連れにしない
+  unlockScroll();
   if (instance) {
     instance.destroy();
     instance = null;
@@ -40,6 +63,7 @@ export const initHeroIntro = async () => {
 
   // 再生してもしなくても、FV 側が「イントロ後」の見た目に入るためのフック
   const markDone = () => {
+    unlockScroll();
     overlay.classList.add("is-done");
     document.querySelector(".js-hero")?.classList.add("is-intro-done");
     // ヘッダーは #swup の外なので、html に付けてイントロ後に出す
@@ -86,12 +110,23 @@ export const initHeroIntro = async () => {
   window.scrollTo(0, 0);
   resetScroll();
 
+  // 先頭へ戻したうえで、イントロが終わるまでその場に留める。
+  // ロックは markDone()(再生完了・失敗)か destroyHeroIntro()(遷移で中断)で必ず解く
+  lockScroll();
+
   // キャンバスの実寸を先に確定させてから読み込む(display:none のままだと 0 になる)
   overlay.classList.add("is-webgl");
 
   const current = generation;
   const { default: HeroIntro } = await import("./hero-intro/sketch.js");
-  if (current !== generation || !overlay.isConnected) {
+  // 世代が変わっている = destroyHeroIntro() が走っている(ロックもそこで解けている)
+  if (current !== generation) {
+    return;
+  }
+
+  // 世代はそのままにオーバーレイだけ消えた場合は、解く者がいないのでここで解く
+  if (!overlay.isConnected) {
+    unlockScroll();
     return;
   }
 
