@@ -25,8 +25,7 @@ const isProd = import.meta.env.PROD;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- JS が動く環境では最初の描画前に外す。JS 無効時だけ属性が残るので、
-         演出前提で隠している要素(FV のタイポグラフィなど)を静止表示に戻せる -->
+
     <script is:inline>
       document.documentElement.removeAttribute("data-script-disabled");
     </script>
@@ -40,7 +39,7 @@ const isProd = import.meta.env.PROD;
     <meta name="twitter:card" content="summary_large_image" />
     {SNS.x && <meta name="twitter:site" content={SNS.x} />}
     <title>{title}</title>
-    <link rel="canonical" href={Astro.url} />
+    <link rel="canonical" href="https://nami.attcraft.com" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Italiana&display=swap" rel="stylesheet">
